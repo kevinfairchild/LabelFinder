@@ -65,6 +65,10 @@ class HomeViewModel(private val repository: SearchRepository) : ViewModel() {
         addToList(barcode)
     }
 
+    fun deleteHistoryEntry(id: Long) {
+        viewModelScope.launch { repository.deleteHistoryEntry(id) }
+    }
+
     fun recordSearch() {
         viewModelScope.launch {
             for (barcode in _searchList.value) {

@@ -25,6 +25,10 @@ class SearchRepository(private val db: AppDatabase) {
         historyDao.updateFound(id, found)
     }
 
+    suspend fun deleteHistoryEntry(id: Long) {
+        historyDao.deleteById(id)
+    }
+
     suspend fun clearHistory() {
         historyDao.clearAll()
     }

@@ -13,7 +13,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.labelfinder.R
@@ -121,6 +123,15 @@ class HomeActivity : AppCompatActivity() {
         recentAdapter = RecentSearchAdapter { barcode -> viewModel.addHistoryToList(barcode) }
         binding.recentList.layoutManager = LinearLayoutManager(this)
         binding.recentList.adapter = recentAdapter
+
+        val swipeHandler = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder) = false
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {
+                val item = recentAdapter.currentList[vh.bindingAdapterPosition]
+                viewModel.deleteHistoryEntry(item.id)
+            }
+        }
+        ItemTouchHelper(swipeHandler).attachToRecyclerView(binding.recentList)
     }
 
     private fun observeState() {

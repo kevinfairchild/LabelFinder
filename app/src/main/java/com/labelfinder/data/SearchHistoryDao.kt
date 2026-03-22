@@ -15,6 +15,9 @@ interface SearchHistoryDao {
     @Query("DELETE FROM search_history WHERE barcode = :barcode COLLATE NOCASE")
     suspend fun deleteByBarcode(barcode: String)
 
+    @Query("DELETE FROM search_history WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
     @Transaction
     suspend fun upsert(entry: SearchHistory) {
         deleteByBarcode(entry.barcode)
