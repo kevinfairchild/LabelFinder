@@ -1,6 +1,7 @@
 package com.labelfinder
 
 import android.graphics.RectF
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -36,6 +37,8 @@ class BarcodeAnalyzer(
     }
 
     private val scanner = BarcodeScanning.getClient(options)
+
+    fun close() { scanner.close() }
 
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
@@ -76,7 +79,7 @@ class BarcodeAnalyzer(
                 }
                 onBarcodesDetected(detected, rotatedWidth, rotatedHeight)
             }
-            .addOnFailureListener {}
+            .addOnFailureListener { e -> Log.w("BarcodeAnalyzer", "Barcode scanning failed", e) }
             .addOnCompleteListener {
                 imageProxy.close()
             }

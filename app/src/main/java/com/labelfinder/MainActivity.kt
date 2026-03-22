@@ -56,10 +56,14 @@ class MainActivity : AppCompatActivity() {
 
     private var camera: Camera? = null
     private var cameraProvider: ProcessCameraProvider? = null
+    private var barcodeAnalyzer: BarcodeAnalyzer? = null
     private var targetBarcode: String = ""
     private var isTorchOn = false
     private var isMultiMode = false
     private var isScanInputFrozen = false
+
+    private val historyMaxItems = 200
+    private val historyMaxAgeMs = 90L * 24 * 60 * 60 * 1000 // 90 days
 
     private val alertCooldownMs = 1500L
     private var lastAlertTimeMs: Long = 0
@@ -92,6 +96,7 @@ class MainActivity : AppCompatActivity() {
     private var lastImageHeight = 0
     // Frozen scan input state for redrawing on selection change
     private var scanInputBaseBitmap: Bitmap? = null
+    private var scanInputDrawnBitmap: Bitmap? = null
     private var scanInputBarcodeRects: List<BarcodeOverlayView.BarcodeRect> = emptyList()
 
     data class ScanHistoryEntry(val barcode: String, val timestamp: Long, var found: Boolean)
@@ -108,6 +113,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if (!checkPlayServices()) return
 
         prefs = getSharedPreferences("barcode_finder", Context.MODE_PRIVATE)
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -469,6 +476,8 @@ class MainActivity : AppCompatActivity() {
             canvas.drawText(label, tx, ty, textPaint)
         }
 
+        scanInputDrawnBitmap?.recycle()
+        scanInputDrawnBitmap = bmp
         binding.frozenFrameView.setImageBitmap(bmp)
         // Reapply the current matrix so zoom/pan is preserved
         binding.frozenFrameView.imageMatrix = frozenFrameMatrix
@@ -562,6 +571,9 @@ class MainActivity : AppCompatActivity() {
     private fun exitScanInput() {
         isScanInputFrozen = false
         scanInputSelectedIndices.clear()
+        scanInputDrawnBitmap?.recycle()
+        scanInputDrawnBitmap = null
+        scanInputBaseBitmap?.recycle()
         scanInputBaseBitmap = null
         scanInputBarcodeRects = emptyList()
         binding.overlayView.visibility = View.VISIBLE
@@ -685,14 +697,23 @@ class MainActivity : AppCompatActivity() {
         future.addListener({
             cameraProvider = future.get()
             val preview = Preview.Builder().build().also { it.setSurfaceProvider(binding.previewView.surfaceProvider) }
-            @Suppress("DEPRECATION")
+            val resolutionSelector = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    androidx.camera.core.resolutionselector.ResolutionStrategy(
+                        Size(1920, 1080),
+                        androidx.camera.core.resolutionselector.ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                    )
+                ).build()
             val analysis = ImageAnalysis.Builder()
-                .setTargetResolution(Size(1920, 1080))
+                .setResolutionSelector(resolutionSelector)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build().also {
-                    it.setAnalyzer(cameraExecutor, BarcodeAnalyzer(getSelectedBarcodeFormats()) { barcodes, w, h ->
+                    val analyzer = BarcodeAnalyzer(getSelectedBarcodeFormats()) { barcodes, w, h ->
                         runOnUiThread { if (!isFrozen && !isScanInputFrozen) handleDetectedBarcodes(barcodes, w, h) }
-                    })
+                    }
+                    barcodeAnalyzer?.close()
+                    barcodeAnalyzer = analyzer
+                    it.setAnalyzer(cameraExecutor, analyzer)
                 }
             try {
                 cameraProvider?.unbindAll()
@@ -838,7 +859,7 @@ class MainActivity : AppCompatActivity() {
         val stripDisp = if (stripChars.isEmpty()) "None" else stripChars.toList().joinToString("  ") { "\"$it\"" }
 
         AlertDialog.Builder(this).setTitle("Settings")
-            .setItems(arrayOf("Barcode Formats...","Ignore Prefix/Suffix: $stripDisp","Alert Volume: ${volOpts[alertVolume/34]}","Vibration: ${vibOpts[vibrationStrength]}","Alert Sound: ${toneOpts[getToneIndex()]}")) { _, w ->
+            .setItems(arrayOf("Barcode Formats...","Ignore Prefix/Suffix: $stripDisp","Alert Volume: ${volOpts[getVolumeIndex()]}","Vibration: ${vibOpts[vibrationStrength]}","Alert Sound: ${toneOpts[getToneIndex()]}")) { _, w ->
                 when (w) { 0 -> showFormatFilter(fmtNames, fmtKeys, checked); 1 -> showStripChars(); 2 -> showVolume(volOpts); 3 -> showVibration(vibOpts); 4 -> showTone(toneOpts) }
             }.setPositiveButton("Close", null).show()
     }
@@ -857,8 +878,10 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Apply") { _, _ -> saveSettings(); restartCameraWithFormats() }.setNegativeButton("Cancel", null).show()
     }
 
+    private fun getVolumeIndex() = when(alertVolume) { 0->0; in 1..33->1; in 34..66->2; else->3 }
+
     private fun showVolume(o: Array<String>) {
-        AlertDialog.Builder(this).setTitle("Alert Volume").setSingleChoiceItems(o, alertVolume/34) { d, w ->
+        AlertDialog.Builder(this).setTitle("Alert Volume").setSingleChoiceItems(o, getVolumeIndex()) { d, w ->
             alertVolume = when(w) { 0->0;1->33;2->66;else->100 }; recreateToneGenerator(); saveSettings(); d.dismiss()
         }.show()
     }
@@ -881,7 +904,12 @@ class MainActivity : AppCompatActivity() {
     private fun saveSettings() { prefs.edit().putStringSet("enabled_formats", enabledFormats).putInt("alert_volume", alertVolume).putInt("vibration_strength", vibrationStrength).putInt("alert_tone_type", alertToneType).putString("strip_chars", stripChars).apply() }
     private fun loadSettings() { prefs.getStringSet("enabled_formats", null)?.let { enabledFormats = it.toMutableSet() }; alertVolume = prefs.getInt("alert_volume", 100); vibrationStrength = prefs.getInt("vibration_strength", 2); alertToneType = prefs.getInt("alert_tone_type", ToneGenerator.TONE_PROP_BEEP); stripChars = prefs.getString("strip_chars", "*+") ?: "*+" }
 
-    private fun saveHistory() { val a = JSONArray(); for (e in scanHistory) a.put(JSONObject().apply { put("barcode",e.barcode);put("timestamp",e.timestamp);put("found",e.found) }); prefs.edit().putString("scan_history", a.toString()).apply() }
+    private fun saveHistory() {
+        val cutoff = System.currentTimeMillis() - historyMaxAgeMs
+        scanHistory.removeAll { it.timestamp < cutoff }
+        while (scanHistory.size > historyMaxItems) scanHistory.removeLast()
+        val a = JSONArray(); for (e in scanHistory) a.put(JSONObject().apply { put("barcode",e.barcode);put("timestamp",e.timestamp);put("found",e.found) }); prefs.edit().putString("scan_history", a.toString()).apply()
+    }
     private fun loadHistory() { val j = prefs.getString("scan_history", null) ?: return; try { val a = JSONArray(j); scanHistory.clear(); for (i in 0 until a.length()) { val o = a.getJSONObject(i); scanHistory.add(ScanHistoryEntry(o.getString("barcode"), o.getLong("timestamp"), o.getBoolean("found"))) } } catch (_: Exception) {} }
 
     private fun saveSearchList() { val a = JSONArray(); for (i in searchList) a.put(JSONObject().apply { put("barcode",i.barcode);put("addedAt",i.addedAt);put("found",i.found);put("active",i.active) }); prefs.edit().putString("batch_list", a.toString()).apply() }
@@ -889,5 +917,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun hideKeyboard() { (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(binding.searchInput.windowToken, 0) }
 
-    override fun onDestroy() { super.onDestroy(); cameraExecutor.shutdown(); toneGenerator?.release() }
+    private fun checkPlayServices(): Boolean {
+        val availability = com.google.android.gms.common.GoogleApiAvailability.getInstance()
+        val result = availability.isGooglePlayServicesAvailable(this)
+        if (result == com.google.android.gms.common.ConnectionResult.SUCCESS) return true
+        AlertDialog.Builder(this)
+            .setTitle("Google Play Services Required")
+            .setMessage("This app requires Google Play Services for barcode scanning. Please install or update Google Play Services and try again.")
+            .setCancelable(false)
+            .setPositiveButton("OK") { _, _ -> finish() }
+            .show()
+        return false
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        barcodeAnalyzer?.close()
+        cameraExecutor.shutdown()
+        toneGenerator?.release()
+        scanInputDrawnBitmap?.recycle()
+        scanInputBaseBitmap?.recycle()
+    }
 }
