@@ -476,11 +476,49 @@ class MainActivity : AppCompatActivity() {
         binding.frozenFrameView.imageMatrix = frozenFrameMatrix
     }
 
+    private fun clampFrozenMatrix() {
+        val values = FloatArray(9)
+        frozenFrameMatrix.getValues(values)
+        val currentScale = values[Matrix.MSCALE_X]
+
+        val baseValues = FloatArray(9)
+        frozenBaseMatrix.getValues(baseValues)
+        val baseScale = baseValues[Matrix.MSCALE_X]
+        val minScale = baseScale
+
+        // Clamp zoom — no smaller than 50% of base scale
+        if (currentScale < minScale) {
+            val fix = minScale / currentScale
+            val vw = binding.frozenFrameView.width / 2f
+            val vh = binding.frozenFrameView.height / 2f
+            frozenFrameMatrix.postScale(fix, fix, vw, vh)
+        }
+
+        // Clamp pan — image must cover at least 50% of view
+        val drawable = binding.frozenFrameView.drawable ?: return
+        val bw = drawable.intrinsicWidth.toFloat()
+        val bh = drawable.intrinsicHeight.toFloat()
+        val mappedRect = RectF(0f, 0f, bw, bh)
+        frozenFrameMatrix.mapRect(mappedRect)
+
+        val viewW = binding.frozenFrameView.width.toFloat()
+        val viewH = binding.frozenFrameView.height.toFloat()
+        var fixDx = 0f; var fixDy = 0f
+
+        if (mappedRect.right < viewW * 0.5f) fixDx = viewW * 0.5f - mappedRect.right
+        if (mappedRect.left > viewW * 0.5f) fixDx = viewW * 0.5f - mappedRect.left
+        if (mappedRect.bottom < viewH * 0.5f) fixDy = viewH * 0.5f - mappedRect.bottom
+        if (mappedRect.top > viewH * 0.5f) fixDy = viewH * 0.5f - mappedRect.top
+
+        if (fixDx != 0f || fixDy != 0f) frozenFrameMatrix.postTranslate(fixDx, fixDy)
+    }
+
     private fun setupScanInputTouchHandler() {
         val scaleDetector = ScaleGestureDetector(this,
             object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
                 override fun onScale(detector: ScaleGestureDetector): Boolean {
                     frozenFrameMatrix.postScale(detector.scaleFactor, detector.scaleFactor, detector.focusX, detector.focusY)
+                    clampFrozenMatrix()
                     binding.frozenFrameView.imageMatrix = frozenFrameMatrix
                     return true
                 }
@@ -510,6 +548,7 @@ class MainActivity : AppCompatActivity() {
                             if (!isDragging && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) isDragging = true
                             if (isDragging) {
                                 frozenFrameMatrix.postTranslate(dx, dy)
+                                clampFrozenMatrix()
                                 binding.frozenFrameView.imageMatrix = frozenFrameMatrix
                             }
                             lastX = event.getX(idx); lastY = event.getY(idx)
