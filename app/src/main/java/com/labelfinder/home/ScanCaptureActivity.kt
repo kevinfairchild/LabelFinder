@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -28,6 +29,8 @@ class ScanCaptureActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
     private var barcodeAnalyzer: BarcodeAnalyzer? = null
     private var cameraProvider: ProcessCameraProvider? = null
+    private var camera: Camera? = null
+    private var isTorchOn = false
     private val frozen = AtomicBoolean(false)
 
     private var detectedBarcodes: List<BarcodeAnalyzer.DetectedBarcode> = emptyList()
@@ -56,6 +59,19 @@ class ScanCaptureActivity : AppCompatActivity() {
         binding.cancelButton.setOnClickListener {
             setResult(Activity.RESULT_CANCELED)
             finish()
+        }
+
+        binding.torchButton.setOnClickListener {
+            camera?.let { cam ->
+                if (cam.cameraInfo.hasFlashUnit()) {
+                    isTorchOn = !isTorchOn
+                    cam.cameraControl.enableTorch(isTorchOn)
+                    binding.torchButton.setImageResource(
+                        if (isTorchOn) com.labelfinder.R.drawable.ic_flashlight_on
+                        else com.labelfinder.R.drawable.ic_flashlight_off
+                    )
+                }
+            }
         }
 
         binding.rescanButton.setOnClickListener { rescan() }
@@ -114,7 +130,7 @@ class ScanCaptureActivity : AppCompatActivity() {
 
             try {
                 provider.unbindAll()
-                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
+                camera = provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
             } catch (e: Exception) {
                 Toast.makeText(this, "Camera failed: ${e.message}", Toast.LENGTH_LONG).show()
                 finish()
@@ -131,6 +147,7 @@ class ScanCaptureActivity : AppCompatActivity() {
         }
         binding.previewView.visibility = View.INVISIBLE
         binding.scanningText.visibility = View.GONE
+        binding.torchButton.visibility = View.GONE
 
         // Set up overlay in selectable mode
         binding.overlayView.setSourceDimensions(lastImageWidth, lastImageHeight)
@@ -156,7 +173,10 @@ class ScanCaptureActivity : AppCompatActivity() {
         binding.frozenFrame.setImageBitmap(null)
         binding.previewView.visibility = View.VISIBLE
         binding.scanningText.visibility = View.VISIBLE
+        binding.torchButton.visibility = View.VISIBLE
         binding.bottomPanel.visibility = View.GONE
+        isTorchOn = false
+        binding.torchButton.setImageResource(com.labelfinder.R.drawable.ic_flashlight_off)
 
         // Restart camera
         cameraProvider?.unbindAll()

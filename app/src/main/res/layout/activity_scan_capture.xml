@@ -27,6 +27,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Torch toggle -->
+    <ImageButton
+        android:id="@+id/torchButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:src="@drawable/ic_flashlight_off"
+        android:background="#88000000"
+        android:padding="8dp"
+        android:contentDescription="Toggle flashlight" />
+
     <!-- Scanning instruction (shown while camera is live) -->
     <TextView
         android:id="@+id/scanningText"
