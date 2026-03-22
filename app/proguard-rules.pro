@@ -10,10 +10,6 @@
 # CameraX
 -keep class androidx.camera.** { *; }
 
-# Keep data classes used for JSON serialization via JSONObject
--keepclassmembers class com.labelfinder.MainActivity$ScanHistoryEntry { *; }
--keepclassmembers class com.labelfinder.MainActivity$SearchListItem { *; }
-
 # Room
 -keep class * extends androidx.room.RoomDatabase
 -keep @androidx.room.Entity class *
