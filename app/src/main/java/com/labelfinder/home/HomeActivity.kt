@@ -7,6 +7,9 @@ import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -59,10 +62,25 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        if (!checkPlayServices()) return
+
         setupInput()
         setupButtons()
         setupRecentList()
         observeState()
+    }
+
+    private fun checkPlayServices(): Boolean {
+        val availability = GoogleApiAvailability.getInstance()
+        val result = availability.isGooglePlayServicesAvailable(this)
+        if (result == ConnectionResult.SUCCESS) return true
+        AlertDialog.Builder(this)
+            .setTitle("Google Play Services Required")
+            .setMessage("This app requires Google Play Services for barcode scanning. Please install or update Google Play Services and try again.")
+            .setCancelable(false)
+            .setPositiveButton("OK") { _, _ -> finish() }
+            .show()
+        return false
     }
 
     private fun setupInput() {
