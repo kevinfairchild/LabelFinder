@@ -1,11 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LabelFinder" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.LabelFinder" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary green -->
         <item name="colorPrimary">#FF4CAF50</item>
-        <item name="colorPrimaryVariant">#FF388E3C</item>
-        <item name="colorOnPrimary">#FFFFFFFF</item>
+        <item name="colorOnPrimary">#FF000000</item>
+        <item name="colorPrimaryContainer">#FF1B5E20</item>
+        <item name="colorOnPrimaryContainer">#FFA5D6A7</item>
+
+        <!-- Secondary orange -->
         <item name="colorSecondary">#FFFF9800</item>
+        <item name="colorOnSecondary">#FF000000</item>
+        <item name="colorSecondaryContainer">#FF4E342E</item>
+        <item name="colorOnSecondaryContainer">#FFFFCC80</item>
+
+        <!-- Surface / background (dark) -->
+        <item name="colorSurface">#FF121212</item>
+        <item name="colorOnSurface">#FFE0E0E0</item>
+        <item name="colorSurfaceVariant">#FF1E1E1E</item>
+        <item name="colorOnSurfaceVariant">#FFBDBDBD</item>
+
+        <!-- Error -->
+        <item name="colorError">#FFEF5350</item>
+        <item name="colorOnError">#FF000000</item>
+
+        <!-- System bars -->
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">#FF121212</item>
     </style>
 </resources>
