@@ -2,9 +2,11 @@ package com.labelfinder.home
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -53,6 +55,14 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun setupInput() {
+        binding.addButton.isEnabled = false
+        binding.barcodeInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                binding.addButton.isEnabled = !s.isNullOrBlank()
+            }
+        })
         binding.barcodeInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 addCurrentInput()
@@ -76,7 +86,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         binding.settingsButton.setOnClickListener {
-            // TODO: Open settings (Phase 4, task #19)
+            Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show()
         }
     }
 
