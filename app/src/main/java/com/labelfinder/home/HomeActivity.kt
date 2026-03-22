@@ -19,6 +19,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.labelfinder.R
 import com.labelfinder.data.AppDatabase
 import com.labelfinder.data.SearchRepository
+import com.labelfinder.finder.FinderActivity
 import com.labelfinder.databinding.ActivityHomeBinding
 import kotlinx.coroutines.launch
 
@@ -77,7 +78,10 @@ class HomeActivity : AppCompatActivity() {
         binding.findButton.setOnClickListener {
             if (viewModel.canFind()) {
                 viewModel.recordSearch()
-                // TODO: Launch FinderActivity with viewModel.searchList.value
+                val intent = Intent(this, FinderActivity::class.java).apply {
+                    putExtra(FinderActivity.EXTRA_BARCODES, viewModel.searchList.value.toTypedArray())
+                }
+                startActivity(intent)
             }
         }
 

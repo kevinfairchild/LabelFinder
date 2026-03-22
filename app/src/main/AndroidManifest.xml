@@ -32,6 +32,12 @@
             android:exported="false" />
 
         <activity
+            android:name=".finder.FinderActivity"
+            android:exported="false"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="false"
             android:screenOrientation="unspecified"

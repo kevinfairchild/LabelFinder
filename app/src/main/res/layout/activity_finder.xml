@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:fitsSystemWindows="true">
+
+    <!-- Camera preview -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Barcode overlay -->
+    <com.labelfinder.BarcodeOverlayView
+        android:id="@+id/overlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Bottom panel -->
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="#DD121212"
+        android:padding="16dp">
+
+        <!-- Single search: barcode value + done -->
+        <LinearLayout
+            android:id="@+id/singleSearchPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/singleSearchLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="16sp"
+                android:fontFamily="monospace"
+                android:textColor="#FFFFFF"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/doneButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Done"
+                android:textAllCaps="false"
+                android:layout_marginStart="12dp"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+
+        <!-- Multi search: chip strip + progress -->
+        <LinearLayout
+            android:id="@+id/multiSearchPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/progressText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#B0BEC5"
+                android:layout_marginBottom="8dp" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/targetChipGroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleLine="true" />
+            </HorizontalScrollView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/multiDoneButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Done"
+                android:textAllCaps="false"
+                android:layout_marginTop="12dp"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+
+        <!-- Torch button -->
+        <ImageButton
+            android:id="@+id/torchButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="end"
+            android:src="@drawable/ic_flashlight_off"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Toggle flashlight"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+</FrameLayout>
