@@ -257,14 +257,7 @@ class MainActivity : AppCompatActivity() {
     // ---- Matching ----
 
     private fun barcodeMatches(scannedValue: String, searchTerm: String): Boolean {
-        if (stripChars.isEmpty()) return scannedValue.equals(searchTerm, ignoreCase = true)
-        val stripSet = stripChars.toSet()
-        val shouldStripPrefix = searchTerm.firstOrNull()?.let { it !in stripSet } ?: true
-        val shouldStripSuffix = searchTerm.lastOrNull()?.let { it !in stripSet } ?: true
-        var normalized = scannedValue
-        if (shouldStripPrefix) normalized = normalized.trimStart { it in stripSet }
-        if (shouldStripSuffix) normalized = normalized.trimEnd { it in stripSet }
-        return normalized.equals(searchTerm, ignoreCase = true)
+        return BarcodeUtils.barcodeMatches(scannedValue, searchTerm, stripChars)
     }
 
     // ---- Found Lock-On ----
@@ -878,7 +871,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Apply") { _, _ -> saveSettings(); restartCameraWithFormats() }.setNegativeButton("Cancel", null).show()
     }
 
-    private fun getVolumeIndex() = when(alertVolume) { 0->0; in 1..33->1; in 34..66->2; else->3 }
+    private fun getVolumeIndex() = BarcodeUtils.volumeIndex(alertVolume)
 
     private fun showVolume(o: Array<String>) {
         AlertDialog.Builder(this).setTitle("Alert Volume").setSingleChoiceItems(o, getVolumeIndex()) { d, w ->
@@ -905,9 +898,7 @@ class MainActivity : AppCompatActivity() {
     private fun loadSettings() { prefs.getStringSet("enabled_formats", null)?.let { enabledFormats = it.toMutableSet() }; alertVolume = prefs.getInt("alert_volume", 100); vibrationStrength = prefs.getInt("vibration_strength", 2); alertToneType = prefs.getInt("alert_tone_type", ToneGenerator.TONE_PROP_BEEP); stripChars = prefs.getString("strip_chars", "*+") ?: "*+" }
 
     private fun saveHistory() {
-        val cutoff = System.currentTimeMillis() - historyMaxAgeMs
-        scanHistory.removeAll { it.timestamp < cutoff }
-        while (scanHistory.size > historyMaxItems) scanHistory.removeLast()
+        BarcodeUtils.pruneHistory(scanHistory, historyMaxItems, historyMaxAgeMs, System.currentTimeMillis()) { it.timestamp }
         val a = JSONArray(); for (e in scanHistory) a.put(JSONObject().apply { put("barcode",e.barcode);put("timestamp",e.timestamp);put("found",e.found) }); prefs.edit().putString("scan_history", a.toString()).apply()
     }
     private fun loadHistory() { val j = prefs.getString("scan_history", null) ?: return; try { val a = JSONArray(j); scanHistory.clear(); for (i in 0 until a.length()) { val o = a.getJSONObject(i); scanHistory.add(ScanHistoryEntry(o.getString("barcode"), o.getLong("timestamp"), o.getBoolean("found"))) } } catch (_: Exception) {} }

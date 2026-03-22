@@ -49,4 +49,7 @@ dependencies {
 
     // ML Kit Barcode Scanning (unbundled — uses Google Play Services, no native .so in APK)
     implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
 }
