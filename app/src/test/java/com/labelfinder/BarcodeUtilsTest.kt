@@ -276,4 +276,5 @@ class BarcodeUtilsTest {
         val original = listOf("Order%", "*", "SKU-")
         assertEquals(original, BarcodeUtils.parseList(BarcodeUtils.serializeList(original)))
     }
+
 }

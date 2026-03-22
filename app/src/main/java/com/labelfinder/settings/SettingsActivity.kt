@@ -1,12 +1,16 @@
 package com.labelfinder.settings
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
@@ -16,6 +20,8 @@ import com.labelfinder.data.AppSettings
 import com.labelfinder.data.SearchRepository
 import com.labelfinder.databinding.ActivitySettingsBinding
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -40,6 +46,12 @@ class SettingsActivity : AppCompatActivity() {
         ToneGenerator.TONE_PROP_PROMPT to "Confirmation",
         ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to "Alarm"
     )
+
+    private val importFileLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) importSettings(uri)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +78,8 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.addPrefixButton.setOnClickListener { addPrefix() }
         binding.addSuffixButton.setOnClickListener { addSuffix() }
+        binding.exportButton.setOnClickListener { exportSettings() }
+        binding.importButton.setOnClickListener { importFileLauncher.launch("application/json") }
 
         lifecycleScope.launch {
             currentSettings = repository.getSettings()
@@ -235,5 +249,52 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun save() {
         lifecycleScope.launch { repository.saveSettings(currentSettings) }
+    }
+
+    // ---- Import/Export ----
+
+    private fun exportSettings() {
+        try {
+            val json = currentSettings.toJson().toString(2)
+            val file = File(cacheDir, "labelfinder-settings.json")
+            file.writeText(json)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/json"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "LabelFinder Settings")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, "Share settings"))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun importSettings(uri: Uri) {
+        try {
+            val json = contentResolver.openInputStream(uri)?.bufferedReader()?.readText()
+                ?: throw IllegalStateException("Could not read file")
+            val imported = AppSettings.fromJson(JSONObject(json))
+
+            AlertDialog.Builder(this)
+                .setTitle("Import Settings")
+                .setMessage("Replace current settings with imported values?\n\n" +
+                    "Formats: ${imported.enabledFormats.split(",").size} selected\n" +
+                    "Prefixes: ${if (imported.prefixes.isBlank()) "none" else imported.prefixes.replace("|", ", ")}\n" +
+                    "Suffixes: ${if (imported.suffixes.isBlank()) "none" else imported.suffixes.replace("|", ", ")}")
+                .setPositiveButton("Import") { _, _ ->
+                    currentSettings = imported
+                    prefixList = BarcodeUtils.parseList(imported.prefixes).toMutableList()
+                    suffixList = BarcodeUtils.parseList(imported.suffixes).toMutableList()
+                    save()
+                    // Refresh UI
+                    recreate()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 }
