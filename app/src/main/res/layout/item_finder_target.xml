@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <!-- Color indicator dot -->
+    <View
+        android:id="@+id/colorDot"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:background="@drawable/status_background" />
+
+    <!-- Barcode value -->
+    <TextView
+        android:id="@+id/barcodeText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:fontFamily="monospace"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <!-- Status text (shown when searching) -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="#888888"
+        android:layout_marginStart="8dp" />
+
+    <!-- Mark Found button (shown when spotted) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/markFoundButton"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:text="Mark Found"
+        android:textSize="12sp"
+        android:textAllCaps="false"
+        android:layout_marginStart="8dp"
+        android:visibility="gone"
+        app:cornerRadius="8dp" />
+
+    <!-- Undo button (shown when found) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/undoButton"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:text="Undo"
+        android:textSize="12sp"
+        android:textAllCaps="false"
+        android:layout_marginStart="8dp"
+        android:visibility="gone" />
+
+</LinearLayout>

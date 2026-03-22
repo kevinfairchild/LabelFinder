@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
@@ -11,32 +12,94 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Instruction overlay -->
+    <!-- Frozen frame shown after capture -->
+    <ImageView
+        android:id="@+id/frozenFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
+    <!-- Overlay for selectable barcode rects -->
+    <com.labelfinder.BarcodeOverlayView
+        android:id="@+id/overlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Scanning instruction (shown while camera is live) -->
+    <TextView
+        android:id="@+id/scanningText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="24dp"
+        android:text="Point at barcodes..."
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:background="#88000000"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
+
+    <!-- Bottom panel (shown after freeze) -->
     <LinearLayout
+        android:id="@+id/bottomPanel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp"
-        android:background="#AA000000">
+        android:background="#DD121212"
+        android:padding="16dp"
+        android:visibility="gone">
 
         <TextView
-            android:id="@+id/instructionText"
+            android:id="@+id/selectionText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Point at a barcode to scan"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:text="Tap barcodes to select"
+            android:textColor="#B0BEC5"
+            android:textSize="14sp"
             android:layout_marginBottom="12dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/cancelButton"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cancel"
-            android:textAllCaps="false" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancelButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Cancel"
+                android:textAllCaps="false" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/rescanButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Rescan"
+                android:textAllCaps="false"
+                android:layout_marginStart="8dp"
+                app:cornerRadius="12dp" />
+
+            <android.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/useSelectedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Use Selected"
+                android:textAllCaps="false"
+                android:enabled="false"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>

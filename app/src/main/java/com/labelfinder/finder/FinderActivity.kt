@@ -3,7 +3,6 @@ package com.labelfinder.finder
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Typeface
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -27,7 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.material.chip.Chip
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.labelfinder.BarcodeAnalyzer
 import com.labelfinder.BarcodeOverlayView
 import com.labelfinder.R
@@ -61,6 +60,7 @@ class FinderActivity : AppCompatActivity() {
     private var barcodeAnalyzer: BarcodeAnalyzer? = null
     private var isTorchOn = false
     private var toneGenerator: ToneGenerator? = null
+    private lateinit var targetAdapter: TargetListAdapter
 
     private val viewModel: FinderViewModel by viewModels {
         val barcodes = intent.getStringArrayExtra(EXTRA_BARCODES)?.toList() ?: emptyList()
@@ -84,6 +84,7 @@ class FinderActivity : AppCompatActivity() {
         toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100) } catch (_: Exception) { null }
 
         setupButtons()
+        setupTargetList()
         observeState()
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
@@ -109,6 +110,15 @@ class FinderActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupTargetList() {
+        targetAdapter = TargetListAdapter(
+            onMarkFound = { viewModel.markFound(it) },
+            onUnmark = { viewModel.unmarkFound(it) }
+        )
+        binding.targetList.layoutManager = LinearLayoutManager(this)
+        binding.targetList.adapter = targetAdapter
+    }
+
     private fun observeState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -129,32 +139,10 @@ class FinderActivity : AppCompatActivity() {
 
     private fun updateMultiSearchUI(state: FinderUiState) {
         binding.progressText.text = "${state.foundCount} of ${state.totalCount} found"
-
-        binding.targetChipGroup.removeAllViews()
-        for ((i, target) in state.targets.withIndex()) {
-            val color = TARGET_COLORS[i % TARGET_COLORS.size]
-            val chip = Chip(this).apply {
-                text = when (target.status) {
-                    TargetStatus.FOUND -> "\u2713 ${target.barcode}"
-                    TargetStatus.SPOTTED -> "\u25C9 ${target.barcode}"
-                    TargetStatus.SEARCHING -> target.barcode
-                }
-                typeface = Typeface.MONOSPACE
-                chipBackgroundColor = android.content.res.ColorStateList.valueOf(
-                    if (target.status == TargetStatus.FOUND) 0xFF1B5E20.toInt()
-                    else (color and 0x00FFFFFF) or 0x40000000 // 25% alpha tint
-                )
-                setTextColor(if (target.status == TargetStatus.FOUND) 0xFFA5D6A7.toInt() else 0xFFFFFFFF.toInt())
-                setOnClickListener {
-                    if (target.status == TargetStatus.FOUND) viewModel.unmarkFound(i)
-                    else if (target.status == TargetStatus.SPOTTED) viewModel.markFound(i)
-                }
-            }
-            binding.targetChipGroup.addView(chip)
-        }
+        targetAdapter.submitList(state.targets.toList())
 
         if (state.allFound) {
-            binding.multiDoneButton.text = "All Found — Done"
+            binding.multiDoneButton.text = "All Found \u2014 Done"
         } else {
             binding.multiDoneButton.text = "Done"
         }
@@ -206,11 +194,12 @@ class FinderActivity : AppCompatActivity() {
         val scannedValues = detected.map { it.rawValue }
         val newlySpotted = viewModel.onBarcodesDetected(scannedValues)
 
-        // Build overlay rects
+        // Build overlay rects with per-target colors
         val rects = detected.map { barcode ->
             val targetIdx = viewModel.matchingTargetIndex(barcode.rawValue)
             val isTarget = targetIdx >= 0
-            BarcodeOverlayView.BarcodeRect(barcode.boundingBox, barcode.rawValue, isTarget)
+            val color = if (targetIdx >= 0) TARGET_COLORS[targetIdx % TARGET_COLORS.size] else 0
+            BarcodeOverlayView.BarcodeRect(barcode.boundingBox, barcode.rawValue, isTarget, color)
         }
         binding.overlayView.updateBarcodes(rects)
 

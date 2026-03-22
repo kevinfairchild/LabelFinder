@@ -42,6 +42,10 @@ class FinderViewModel(
     // Track which barcodes have already triggered an alert (by target index)
     private val alertedIndices = mutableSetOf<Int>()
 
+    // Debounce: count frames since each target was last seen (prevents flickering)
+    private val missedFrames = mutableMapOf<Int, Int>()
+    private val missedFrameThreshold = 15 // ~0.5s at 30fps before reverting to SEARCHING
+
     /**
      * Called each frame with detected barcode values.
      * Returns indices of newly spotted targets (for triggering alerts).
@@ -57,15 +61,26 @@ class FinderViewModel(
                 BarcodeUtils.barcodeMatches(scanned, target.barcode, current.stripChars)
             }
 
-            if (isMatch && target.status == TargetStatus.SEARCHING) {
-                if (i !in alertedIndices) {
-                    alertedIndices.add(i)
-                    newlySpotted.add(i)
+            if (isMatch) {
+                missedFrames.remove(i)
+                if (target.status == TargetStatus.SEARCHING) {
+                    if (i !in alertedIndices) {
+                        alertedIndices.add(i)
+                        newlySpotted.add(i)
+                    }
+                    target.copy(status = TargetStatus.SPOTTED)
+                } else {
+                    target // already SPOTTED, keep it
                 }
-                target.copy(status = TargetStatus.SPOTTED)
-            } else if (!isMatch && target.status == TargetStatus.SPOTTED) {
-                // Lost sight — go back to searching but don't re-alert
-                target.copy(status = TargetStatus.SEARCHING)
+            } else if (target.status == TargetStatus.SPOTTED) {
+                val missed = (missedFrames[i] ?: 0) + 1
+                missedFrames[i] = missed
+                if (missed >= missedFrameThreshold) {
+                    missedFrames.remove(i)
+                    target.copy(status = TargetStatus.SEARCHING)
+                } else {
+                    target // stay SPOTTED during debounce window
+                }
             } else {
                 target
             }

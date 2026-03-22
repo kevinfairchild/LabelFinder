@@ -75,17 +75,12 @@
                 android:textColor="#B0BEC5"
                 android:layout_marginBottom="8dp" />
 
-            <HorizontalScrollView
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/targetList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:scrollbars="none">
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/targetChipGroup"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:singleLine="true" />
-            </HorizontalScrollView>
+                android:maxHeight="200dp"
+                android:nestedScrollingEnabled="true" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/multiDoneButton"

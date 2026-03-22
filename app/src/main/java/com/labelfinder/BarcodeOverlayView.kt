@@ -17,7 +17,8 @@ class BarcodeOverlayView @JvmOverloads constructor(
     data class BarcodeRect(
         val rect: RectF,
         val value: String,
-        val isTarget: Boolean
+        val isTarget: Boolean,
+        val highlightColor: Int = 0 // 0 means use default green
     )
 
     private var barcodes: List<BarcodeRect> = emptyList()
@@ -203,7 +204,7 @@ class BarcodeOverlayView @JvmOverloads constructor(
         }
 
         if (hasLiveTarget) {
-            for (b in barcodes.filter { it.isTarget }) drawTargetHighlight(canvas, mapRect(b.rect), b.value)
+            for (b in barcodes.filter { it.isTarget }) drawTargetHighlight(canvas, mapRect(b.rect), b.value, 1f, b.highlightColor)
         } else if (hasStickyTarget) {
             val fade = ((stickyExpireTime - now).toFloat() / stickyDurationMs).coerceIn(0f, 1f)
             for (b in stickyFoundRects) drawTargetHighlight(canvas, mapRect(b.rect), b.value, fade)
@@ -253,9 +254,21 @@ class BarcodeOverlayView @JvmOverloads constructor(
         }
     }
 
-    private fun drawTargetHighlight(canvas: Canvas, rect: RectF, value: String, alpha: Float = 1f) {
+    private fun drawTargetHighlight(canvas: Canvas, rect: RectF, value: String, alpha: Float = 1f, color: Int = 0) {
         pulseAlpha += pulseDirection
         if (pulseAlpha <= 80 || pulseAlpha >= 255) pulseDirection = -pulseDirection
+
+        val useColor = if (color != 0) color else Color.parseColor("#4CAF50")
+
+        // Temporarily override paint colors if custom color is set
+        val savedGlow = targetGlowPaint.color
+        val savedFill = targetFillPaint.color
+        val savedStroke = targetStrokePaint.color
+        val savedCorner = cornerPaint.color
+        targetGlowPaint.color = useColor
+        targetFillPaint.color = (useColor and 0x00FFFFFF) or 0x55000000
+        targetStrokePaint.color = useColor
+        cornerPaint.color = useColor
 
         targetGlowPaint.alpha = (pulseAlpha * alpha).toInt()
         canvas.drawRoundRect(rect, 14f, 14f, targetGlowPaint)
@@ -264,7 +277,13 @@ class BarcodeOverlayView @JvmOverloads constructor(
         targetStrokePaint.alpha = (255 * alpha).toInt()
         canvas.drawRoundRect(rect, 14f, 14f, targetStrokePaint)
         drawCornerBrackets(canvas, rect, alpha)
-        drawFoundLabel(canvas, rect, value, alpha)
+        drawFoundLabel(canvas, rect, value, alpha, useColor)
+
+        // Restore original colors
+        targetGlowPaint.color = savedGlow
+        targetFillPaint.color = savedFill
+        targetStrokePaint.color = savedStroke
+        cornerPaint.color = savedCorner
     }
 
     private fun drawCornerBrackets(canvas: Canvas, rect: RectF, alpha: Float) {
@@ -280,16 +299,40 @@ class BarcodeOverlayView @JvmOverloads constructor(
         canvas.drawLine(rect.right, rect.bottom + 4, rect.right, rect.bottom - len, cornerPaint)
     }
 
-    private fun drawFoundLabel(canvas: Canvas, rect: RectF, value: String, alpha: Float) {
-        val paint = Paint(stickyLabelPaint).apply { this.alpha = (255 * alpha).toInt() }
+    private fun drawFoundLabel(canvas: Canvas, rect: RectF, value: String, alpha: Float, color: Int = 0) {
+        // White text with shadow — readable on any color background
+        val paint = Paint().apply {
+            this.color = Color.WHITE
+            this.alpha = (255 * alpha).toInt()
+            textSize = 44f
+            isAntiAlias = true
+            typeface = Typeface.DEFAULT_BOLD
+            setShadowLayer(6f, 2f, 2f, Color.BLACK)
+        }
         val text = "\u2713 FOUND: $value"
         val tw = paint.measureText(text)
         val tx = (rect.centerX() - tw / 2f).coerceAtLeast(8f)
         val ty = (rect.top - 20f).coerceAtLeast(paint.textSize + 16f)
         val bg = RectF(tx - 12f, ty - paint.textSize - 8f, tx + tw + 12f, ty + 12f)
-        val bgP = Paint(textBgPaint).apply { color = Color.parseColor("#EE1B5E20"); this.alpha = (0xEE * alpha).toInt() }
+
+        // Use darkened target color for background, or default dark green
+        val bgColor = if (color != 0) darkenColor(color) else Color.parseColor("#1B5E20")
+        val bgP = Paint().apply {
+            this.color = bgColor
+            this.alpha = (0xEE * alpha).toInt()
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
         canvas.drawRoundRect(bg, 10f, 10f, bgP)
         canvas.drawText(text, tx, ty, paint)
+    }
+
+    /** Darken a color to ~40% brightness for use as a label background */
+    private fun darkenColor(color: Int): Int {
+        val r = ((color shr 16) and 0xFF) * 0.4f
+        val g = ((color shr 8) and 0xFF) * 0.4f
+        val b = (color and 0xFF) * 0.4f
+        return Color.rgb(r.toInt(), g.toInt(), b.toInt())
     }
 
     private fun drawLabel(canvas: Canvas, rect: RectF, text: String) {

@@ -48,11 +48,22 @@ class FinderViewModelTest {
     }
 
     @Test
-    fun `spotted target reverts to searching when lost`() {
+    fun `spotted target stays spotted during debounce window`() {
         val vm = FinderViewModel(listOf("ABC123"), "*+")
         vm.onBarcodesDetected(listOf("ABC123"))
         assertEquals(TargetStatus.SPOTTED, vm.state.value.targets[0].status)
-        vm.onBarcodesDetected(emptyList()) // lost
+        // A few missed frames should NOT revert to searching
+        repeat(5) { vm.onBarcodesDetected(emptyList()) }
+        assertEquals(TargetStatus.SPOTTED, vm.state.value.targets[0].status)
+    }
+
+    @Test
+    fun `spotted target reverts to searching after debounce threshold`() {
+        val vm = FinderViewModel(listOf("ABC123"), "*+")
+        vm.onBarcodesDetected(listOf("ABC123"))
+        assertEquals(TargetStatus.SPOTTED, vm.state.value.targets[0].status)
+        // Exceed debounce threshold (15 frames)
+        repeat(15) { vm.onBarcodesDetected(emptyList()) }
         assertEquals(TargetStatus.SEARCHING, vm.state.value.targets[0].status)
     }
 
