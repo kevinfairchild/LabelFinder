@@ -1,9 +1,11 @@
 package com.labelfinder.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -23,6 +25,18 @@ class HomeActivity : AppCompatActivity() {
 
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModel.Factory(SearchRepository(AppDatabase.getInstance(this)))
+    }
+
+    private val scanCaptureLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val barcode = result.data?.getStringExtra(ScanCaptureActivity.RESULT_BARCODE)
+            if (!barcode.isNullOrBlank()) {
+                binding.barcodeInput.setText(barcode)
+                binding.barcodeInput.setSelection(barcode.length)
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,7 +69,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         binding.scanButton.setOnClickListener {
-            // TODO: Launch scan-to-populate camera (Phase 2, task #15)
+            scanCaptureLauncher.launch(Intent(this, ScanCaptureActivity::class.java))
         }
 
         binding.settingsButton.setOnClickListener {
