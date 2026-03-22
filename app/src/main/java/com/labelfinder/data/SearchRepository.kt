@@ -17,7 +17,7 @@ class SearchRepository(private val db: AppDatabase) {
     fun recentHistory(limit: Int = 20): Flow<List<SearchHistory>> = historyDao.getRecent(limit)
 
     suspend fun addToHistory(barcode: String) {
-        historyDao.insert(SearchHistory(barcode = barcode, timestamp = System.currentTimeMillis()))
+        historyDao.upsert(SearchHistory(barcode = barcode, timestamp = System.currentTimeMillis()))
         pruneHistory()
     }
 

@@ -32,7 +32,7 @@ class SearchHistoryDaoTest {
 
     @Test
     fun insertAndRetrieve() = runTest {
-        dao.insert(SearchHistory(barcode = "ABC123", timestamp = 1000L))
+        dao.upsert(SearchHistory(barcode = "ABC123", timestamp = 1000L))
         val results = dao.getRecentOnce(10)
         assertEquals(1, results.size)
         assertEquals("ABC123", results[0].barcode)
@@ -40,8 +40,8 @@ class SearchHistoryDaoTest {
 
     @Test
     fun recentOrderedByTimestampDesc() = runTest {
-        dao.insert(SearchHistory(barcode = "OLD", timestamp = 1000L))
-        dao.insert(SearchHistory(barcode = "NEW", timestamp = 2000L))
+        dao.upsert(SearchHistory(barcode = "OLD", timestamp = 1000L))
+        dao.upsert(SearchHistory(barcode = "NEW", timestamp = 2000L))
         val results = dao.getRecentOnce(10)
         assertEquals("NEW", results[0].barcode)
         assertEquals("OLD", results[1].barcode)
@@ -49,14 +49,14 @@ class SearchHistoryDaoTest {
 
     @Test
     fun limitReturnsOnlyRequestedCount() = runTest {
-        for (i in 1..5) dao.insert(SearchHistory(barcode = "B$i", timestamp = i.toLong()))
+        for (i in 1..5) dao.upsert(SearchHistory(barcode = "B$i", timestamp = i.toLong()))
         val results = dao.getRecentOnce(3)
         assertEquals(3, results.size)
     }
 
     @Test
     fun updateFound() = runTest {
-        dao.insert(SearchHistory(barcode = "ABC", timestamp = 1000L))
+        dao.upsert(SearchHistory(barcode = "ABC", timestamp = 1000L))
         val entry = dao.getRecentOnce(1).first()
         assertFalse(entry.found)
         dao.updateFound(entry.id, true)
@@ -66,8 +66,8 @@ class SearchHistoryDaoTest {
 
     @Test
     fun deleteOlderThan() = runTest {
-        dao.insert(SearchHistory(barcode = "OLD", timestamp = 100L))
-        dao.insert(SearchHistory(barcode = "NEW", timestamp = 2000L))
+        dao.upsert(SearchHistory(barcode = "OLD", timestamp = 100L))
+        dao.upsert(SearchHistory(barcode = "NEW", timestamp = 2000L))
         dao.deleteOlderThan(500L)
         val results = dao.getRecentOnce(10)
         assertEquals(1, results.size)
@@ -76,11 +76,10 @@ class SearchHistoryDaoTest {
 
     @Test
     fun trimToMax() = runTest {
-        for (i in 1..10) dao.insert(SearchHistory(barcode = "B$i", timestamp = i.toLong()))
+        for (i in 1..10) dao.upsert(SearchHistory(barcode = "B$i", timestamp = i.toLong()))
         assertEquals(10, dao.count())
         dao.trimToMax(5)
         assertEquals(5, dao.count())
-        // Should keep the 5 most recent
         val results = dao.getRecentOnce(10)
         assertEquals("B10", results[0].barcode)
         assertEquals("B6", results[4].barcode)
@@ -88,9 +87,28 @@ class SearchHistoryDaoTest {
 
     @Test
     fun clearAll() = runTest {
-        for (i in 1..3) dao.insert(SearchHistory(barcode = "B$i", timestamp = i.toLong()))
+        for (i in 1..3) dao.upsert(SearchHistory(barcode = "B$i", timestamp = i.toLong()))
         assertEquals(3, dao.count())
         dao.clearAll()
         assertEquals(0, dao.count())
+    }
+
+    @Test
+    fun upsertDeduplicatesSameBarcode() = runTest {
+        dao.upsert(SearchHistory(barcode = "ABC123", timestamp = 1000L))
+        dao.upsert(SearchHistory(barcode = "ABC123", timestamp = 2000L))
+        val results = dao.getRecentOnce(10)
+        assertEquals(1, results.size)
+        assertEquals(2000L, results[0].timestamp)
+    }
+
+    @Test
+    fun upsertDeduplicatesCaseInsensitive() = runTest {
+        dao.upsert(SearchHistory(barcode = "ABC123", timestamp = 1000L))
+        dao.upsert(SearchHistory(barcode = "abc123", timestamp = 2000L))
+        val results = dao.getRecentOnce(10)
+        assertEquals(1, results.size)
+        assertEquals("abc123", results[0].barcode)
+        assertEquals(2000L, results[0].timestamp)
     }
 }

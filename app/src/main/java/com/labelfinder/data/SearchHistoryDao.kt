@@ -3,13 +3,23 @@ package com.labelfinder.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SearchHistoryDao {
 
     @Insert
-    suspend fun insert(entry: SearchHistory)
+    suspend fun insertRaw(entry: SearchHistory)
+
+    @Query("DELETE FROM search_history WHERE barcode = :barcode COLLATE NOCASE")
+    suspend fun deleteByBarcode(barcode: String)
+
+    @Transaction
+    suspend fun upsert(entry: SearchHistory) {
+        deleteByBarcode(entry.barcode)
+        insertRaw(entry)
+    }
 
     @Query("SELECT * FROM search_history ORDER BY timestamp DESC LIMIT :limit")
     fun getRecent(limit: Int = 20): Flow<List<SearchHistory>>
