@@ -28,6 +28,10 @@
         </activity>
 
         <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".home.ScanCaptureActivity"
             android:exported="false" />
 

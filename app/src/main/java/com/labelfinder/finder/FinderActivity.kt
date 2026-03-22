@@ -30,6 +30,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.labelfinder.BarcodeAnalyzer
 import com.labelfinder.BarcodeOverlayView
 import com.labelfinder.R
+import com.labelfinder.data.AppDatabase
+import com.labelfinder.data.SearchRepository
 import com.labelfinder.databinding.ActivityFinderBinding
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
@@ -61,6 +63,9 @@ class FinderActivity : AppCompatActivity() {
     private var isTorchOn = false
     private var toneGenerator: ToneGenerator? = null
     private lateinit var targetAdapter: TargetListAdapter
+    private var alertVolume = 100
+    private var vibrationStrength = 2
+    private var alertToneType = ToneGenerator.TONE_PROP_BEEP
 
     private val viewModel: FinderViewModel by viewModels {
         val barcodes = intent.getStringArrayExtra(EXTRA_BARCODES)?.toList() ?: emptyList()
@@ -81,7 +86,16 @@ class FinderActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
-        toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100) } catch (_: Exception) { null }
+
+        // Load alert settings from DB
+        lifecycleScope.launch {
+            val repo = SearchRepository(AppDatabase.getInstance(this@FinderActivity))
+            val settings = repo.getSettings()
+            alertVolume = settings.alertVolume
+            vibrationStrength = settings.vibrationStrength
+            alertToneType = settings.alertToneType
+            toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, alertVolume) } catch (_: Exception) { null }
+        }
 
         setupButtons()
         setupTargetList()
@@ -210,21 +224,27 @@ class FinderActivity : AppCompatActivity() {
     }
 
     private fun triggerAlert() {
-        try { toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 300) } catch (_: Exception) {}
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                vm.defaultVibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                @Suppress("DEPRECATION")
-                (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(
-                    VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(200)
-            }
-        } catch (_: Exception) {}
+        if (alertVolume > 0) {
+            try { toneGenerator?.startTone(alertToneType, 300) } catch (_: Exception) {}
+        }
+        if (vibrationStrength > 0) {
+            val duration = when (vibrationStrength) { 1 -> 100L; 2 -> 200L; else -> 350L }
+            val amplitude = when (vibrationStrength) { 1 -> 80; 2 -> 180; else -> 255 }
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    vm.defaultVibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    @Suppress("DEPRECATION")
+                    (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(
+                        VibrationEffect.createOneShot(duration, amplitude)
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(duration)
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     override fun onDestroy() {

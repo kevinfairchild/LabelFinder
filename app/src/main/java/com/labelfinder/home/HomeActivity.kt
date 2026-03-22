@@ -20,6 +20,7 @@ import com.labelfinder.R
 import com.labelfinder.data.AppDatabase
 import com.labelfinder.data.SearchRepository
 import com.labelfinder.finder.FinderActivity
+import com.labelfinder.settings.SettingsActivity
 import com.labelfinder.databinding.ActivityHomeBinding
 import kotlinx.coroutines.launch
 
@@ -85,10 +86,15 @@ class HomeActivity : AppCompatActivity() {
         binding.findButton.setOnClickListener {
             if (viewModel.canFind()) {
                 viewModel.recordSearch()
-                val intent = Intent(this, FinderActivity::class.java).apply {
-                    putExtra(FinderActivity.EXTRA_BARCODES, viewModel.searchList.value.toTypedArray())
+                lifecycleScope.launch {
+                    val repo = SearchRepository(AppDatabase.getInstance(this@HomeActivity))
+                    val settings = repo.getSettings()
+                    val intent = Intent(this@HomeActivity, FinderActivity::class.java).apply {
+                        putExtra(FinderActivity.EXTRA_BARCODES, viewModel.searchList.value.toTypedArray())
+                        putExtra(FinderActivity.EXTRA_STRIP_CHARS, settings.stripChars)
+                    }
+                    startActivity(intent)
                 }
-                startActivity(intent)
             }
         }
 
@@ -97,7 +103,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         binding.settingsButton.setOnClickListener {
-            Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, SettingsActivity::class.java))
         }
     }
 
