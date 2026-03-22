@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.labelfinder.R
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
+    private lateinit var recentAdapter: RecentSearchAdapter
 
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModel.Factory(SearchRepository(AppDatabase.getInstance(this)))
@@ -46,6 +48,7 @@ class HomeActivity : AppCompatActivity() {
 
         setupInput()
         setupButtons()
+        setupRecentList()
         observeState()
     }
 
@@ -84,6 +87,12 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupRecentList() {
+        recentAdapter = RecentSearchAdapter { barcode -> viewModel.addHistoryToList(barcode) }
+        binding.recentList.layoutManager = LinearLayoutManager(this)
+        binding.recentList.adapter = recentAdapter
+    }
+
     private fun observeState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -98,7 +107,7 @@ class HomeActivity : AppCompatActivity() {
                     val hasHistory = history.isNotEmpty()
                     binding.recentHeader.visibility = if (hasHistory) android.view.View.VISIBLE else android.view.View.GONE
                     binding.recentList.visibility = if (hasHistory) android.view.View.VISIBLE else android.view.View.GONE
-                    // TODO: Wire up RecyclerView adapter (Phase 2, task #16)
+                    recentAdapter.submitList(history)
                 } }
             }
         }
