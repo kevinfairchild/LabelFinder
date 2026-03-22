@@ -1,0 +1,34 @@
+# Build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration
+local.properties
+
+# Android Studio / IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
+.idea/libraries/
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetSelector.xml
+.idea/kotlinc.xml
+*.iml
+
+# Signing
+*.jks
+*.keystore
+
+# Captures (Android profiler)
+captures/
+
+# Claude Code
+.claude/settings.local.json
