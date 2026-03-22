@@ -1,5 +1,6 @@
 package com.labelfinder.settings
 
+import android.graphics.Typeface
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Bundle
@@ -8,6 +9,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.chip.Chip
+import com.google.android.material.snackbar.Snackbar
+import com.labelfinder.BarcodeUtils
 import com.labelfinder.data.AppDatabase
 import com.labelfinder.data.AppSettings
 import com.labelfinder.data.SearchRepository
@@ -19,6 +22,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var repository: SearchRepository
     private var currentSettings = AppSettings()
+    private var prefixList = mutableListOf<String>()
+    private var suffixList = mutableListOf<String>()
 
     private val formatMap = linkedMapOf(
         "CODE_39" to "Code 39", "CODE_128" to "Code 128",
@@ -59,15 +64,93 @@ class SettingsActivity : AppCompatActivity() {
                 .show()
         }
 
+        binding.addPrefixButton.setOnClickListener { addPrefix() }
+        binding.addSuffixButton.setOnClickListener { addSuffix() }
+
         lifecycleScope.launch {
             currentSettings = repository.getSettings()
+            prefixList = BarcodeUtils.parseList(currentSettings.prefixes).toMutableList()
+            suffixList = BarcodeUtils.parseList(currentSettings.suffixes).toMutableList()
             setupFormatChips()
             setupVolumeChips()
             setupVibrationChips()
             setupToneChips()
-            setupStripChars()
+            refreshPrefixChips()
+            refreshSuffixChips()
         }
     }
+
+    // ---- Prefix/Suffix management ----
+
+    private fun addPrefix() {
+        val input = binding.prefixInput.text?.toString() ?: return
+        val updated = BarcodeUtils.addUnique(prefixList, input)
+        if (updated.size == prefixList.size) {
+            Snackbar.make(binding.root, "\"${input.trim()}\" is already in the list", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        prefixList = updated.toMutableList()
+        binding.prefixInput.text?.clear()
+        refreshPrefixChips()
+        savePrefixSuffix()
+    }
+
+    private fun addSuffix() {
+        val input = binding.suffixInput.text?.toString() ?: return
+        val updated = BarcodeUtils.addUnique(suffixList, input)
+        if (updated.size == suffixList.size) {
+            Snackbar.make(binding.root, "\"${input.trim()}\" is already in the list", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+        suffixList = updated.toMutableList()
+        binding.suffixInput.text?.clear()
+        refreshSuffixChips()
+        savePrefixSuffix()
+    }
+
+    private fun refreshPrefixChips() {
+        binding.prefixChipGroup.removeAllViews()
+        for (prefix in prefixList) {
+            val chip = Chip(this).apply {
+                text = prefix
+                typeface = Typeface.MONOSPACE
+                isCloseIconVisible = true
+                setOnCloseIconClickListener {
+                    prefixList.remove(prefix)
+                    refreshPrefixChips()
+                    savePrefixSuffix()
+                }
+            }
+            binding.prefixChipGroup.addView(chip)
+        }
+    }
+
+    private fun refreshSuffixChips() {
+        binding.suffixChipGroup.removeAllViews()
+        for (suffix in suffixList) {
+            val chip = Chip(this).apply {
+                text = suffix
+                typeface = Typeface.MONOSPACE
+                isCloseIconVisible = true
+                setOnCloseIconClickListener {
+                    suffixList.remove(suffix)
+                    refreshSuffixChips()
+                    savePrefixSuffix()
+                }
+            }
+            binding.suffixChipGroup.addView(chip)
+        }
+    }
+
+    private fun savePrefixSuffix() {
+        currentSettings = currentSettings.copy(
+            prefixes = BarcodeUtils.serializeList(prefixList),
+            suffixes = BarcodeUtils.serializeList(suffixList)
+        )
+        save()
+    }
+
+    // ---- Format/Volume/Vibration/Tone setup (unchanged) ----
 
     private fun setupFormatChips() {
         val enabled = currentSettings.enabledFormats.split(",").toSet()
@@ -91,7 +174,6 @@ class SettingsActivity : AppCompatActivity() {
         }
         if (enabled.isEmpty()) {
             Toast.makeText(this, "At least one format required", Toast.LENGTH_SHORT).show()
-            // Re-check all
             for (i in 0 until binding.formatChipGroup.childCount) {
                 (binding.formatChipGroup.getChildAt(i) as Chip).isChecked = true
             }
@@ -140,7 +222,6 @@ class SettingsActivity : AppCompatActivity() {
                 setOnClickListener {
                     currentSettings = currentSettings.copy(alertToneType = value)
                     save()
-                    // Preview the tone
                     try {
                         val tg = ToneGenerator(AudioManager.STREAM_NOTIFICATION, currentSettings.alertVolume)
                         tg.startTone(value, 300)
@@ -152,24 +233,7 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupStripChars() {
-        binding.stripCharsInput.setText(currentSettings.stripChars)
-        binding.stripCharsInput.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                currentSettings = currentSettings.copy(stripChars = binding.stripCharsInput.text?.toString() ?: "")
-                save()
-            }
-        }
-    }
-
     private fun save() {
         lifecycleScope.launch { repository.saveSettings(currentSettings) }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Save strip chars on leave in case user didn't unfocus
-        currentSettings = currentSettings.copy(stripChars = binding.stripCharsInput.text?.toString() ?: "")
-        save()
     }
 }

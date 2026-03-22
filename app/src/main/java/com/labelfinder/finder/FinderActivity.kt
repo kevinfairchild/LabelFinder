@@ -41,7 +41,8 @@ class FinderActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_BARCODES = "barcodes"
-        const val EXTRA_STRIP_CHARS = "strip_chars"
+        const val EXTRA_PREFIXES = "prefixes"
+        const val EXTRA_SUFFIXES = "suffixes"
 
         // Distinct colors for multi-search overlay highlights
         val TARGET_COLORS = intArrayOf(
@@ -69,8 +70,9 @@ class FinderActivity : AppCompatActivity() {
 
     private val viewModel: FinderViewModel by viewModels {
         val barcodes = intent.getStringArrayExtra(EXTRA_BARCODES)?.toList() ?: emptyList()
-        val strip = intent.getStringExtra(EXTRA_STRIP_CHARS) ?: "*+"
-        FinderViewModel.Factory(barcodes, strip)
+        val prefixes = intent.getStringArrayExtra(EXTRA_PREFIXES)?.toList() ?: emptyList()
+        val suffixes = intent.getStringArrayExtra(EXTRA_SUFFIXES)?.toList() ?: emptyList()
+        FinderViewModel.Factory(barcodes, prefixes, suffixes)
     }
 
     private val permissionLauncher = registerForActivityResult(

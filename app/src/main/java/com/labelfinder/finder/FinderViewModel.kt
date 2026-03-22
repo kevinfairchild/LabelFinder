@@ -18,7 +18,8 @@ enum class TargetStatus { SEARCHING, SPOTTED, FOUND }
 data class FinderUiState(
     val targets: List<SearchTarget> = emptyList(),
     val isMultiSearch: Boolean = false,
-    val stripChars: String = "*+"
+    val prefixes: List<String> = emptyList(),
+    val suffixes: List<String> = emptyList()
 ) {
     val allFound: Boolean get() = targets.all { it.status == TargetStatus.FOUND }
     val foundCount: Int get() = targets.count { it.status == TargetStatus.FOUND }
@@ -27,14 +28,16 @@ data class FinderUiState(
 
 class FinderViewModel(
     barcodes: List<String>,
-    stripChars: String
+    prefixes: List<String> = emptyList(),
+    suffixes: List<String> = emptyList()
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
         FinderUiState(
             targets = barcodes.mapIndexed { i, b -> SearchTarget(b, i) },
             isMultiSearch = barcodes.size > 1,
-            stripChars = stripChars
+            prefixes = prefixes,
+            suffixes = suffixes
         )
     )
     val state: StateFlow<FinderUiState> = _state.asStateFlow()
@@ -58,7 +61,7 @@ class FinderViewModel(
             if (target.status == TargetStatus.FOUND) return@mapIndexed target
 
             val isMatch = scannedValues.any { scanned ->
-                BarcodeUtils.barcodeMatches(scanned, target.barcode, current.stripChars)
+                BarcodeUtils.barcodeMatches(scanned, target.barcode, current.prefixes, current.suffixes)
             }
 
             if (isMatch) {
@@ -116,17 +119,18 @@ class FinderViewModel(
         val current = _state.value
         return current.targets.indexOfFirst { target ->
             target.status != TargetStatus.FOUND &&
-                BarcodeUtils.barcodeMatches(scannedValue, target.barcode, current.stripChars)
+                BarcodeUtils.barcodeMatches(scannedValue, target.barcode, current.prefixes, current.suffixes)
         }
     }
 
     class Factory(
         private val barcodes: List<String>,
-        private val stripChars: String
+        private val prefixes: List<String>,
+        private val suffixes: List<String>
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return FinderViewModel(barcodes, stripChars) as T
+            return FinderViewModel(barcodes, prefixes, suffixes) as T
         }
     }
 }

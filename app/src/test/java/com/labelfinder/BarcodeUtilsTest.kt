@@ -157,4 +157,123 @@ class BarcodeUtilsTest {
         BarcodeUtils.pruneHistory(history, 10, 200_000L, now) { it.timestamp }
         assertEquals(2, history.size)
     }
+
+    // ---- New prefix/suffix matching ----
+
+    @Test
+    fun `prefix strip removes matching prefix`() {
+        assertTrue(BarcodeUtils.barcodeMatches("Order%1234", "1234", listOf("Order%"), emptyList()))
+    }
+
+    @Test
+    fun `suffix strip removes matching suffix`() {
+        assertTrue(BarcodeUtils.barcodeMatches("1234+", "1234", emptyList(), listOf("+")))
+    }
+
+    @Test
+    fun `both prefix and suffix stripped`() {
+        assertTrue(BarcodeUtils.barcodeMatches("*Order%1234+", "1234", listOf("*", "Order%"), listOf("+")))
+    }
+
+    @Test
+    fun `multi-pass strips nested prefixes`() {
+        assertTrue(BarcodeUtils.barcodeMatches("*Order%1234", "1234", listOf("Order%", "*"), emptyList()))
+    }
+
+    @Test
+    fun `multi-pass strips nested suffixes`() {
+        assertTrue(BarcodeUtils.barcodeMatches("1234+-END", "1234", emptyList(), listOf("-END", "+")))
+    }
+
+    @Test
+    fun `multi-pass handles prefix then suffix then prefix`() {
+        // Order%*1234+ → strip Order% → *1234+ → strip * → 1234+ → strip + → 1234
+        assertTrue(BarcodeUtils.barcodeMatches("Order%*1234+", "1234", listOf("Order%", "*"), listOf("+")))
+    }
+
+    @Test
+    fun `prefix strip is case insensitive`() {
+        assertTrue(BarcodeUtils.barcodeMatches("order%1234", "1234", listOf("Order%"), emptyList()))
+        assertTrue(BarcodeUtils.barcodeMatches("ORDER%1234", "1234", listOf("Order%"), emptyList()))
+    }
+
+    @Test
+    fun `no match when no prefix or suffix applies`() {
+        assertFalse(BarcodeUtils.barcodeMatches("XYZ1234", "1234", listOf("Order%"), emptyList()))
+    }
+
+    @Test
+    fun `exact match when no prefixes or suffixes configured`() {
+        assertTrue(BarcodeUtils.barcodeMatches("1234", "1234", emptyList(), emptyList()))
+        assertFalse(BarcodeUtils.barcodeMatches("Order%1234", "1234", emptyList(), emptyList()))
+    }
+
+    @Test
+    fun `empty scanned value does not crash`() {
+        assertFalse(BarcodeUtils.barcodeMatches("", "1234", listOf("*"), listOf("+")))
+    }
+
+    @Test
+    fun `prefix that equals entire scanned value results in empty`() {
+        // "Order%" stripped → "" which doesn't match "1234"
+        assertFalse(BarcodeUtils.barcodeMatches("Order%", "1234", listOf("Order%"), emptyList()))
+    }
+
+    // ---- addUnique ----
+
+    @Test
+    fun `addUnique adds new entry`() {
+        val list = listOf("A", "B")
+        val result = BarcodeUtils.addUnique(list, "C")
+        assertEquals(listOf("A", "B", "C"), result)
+    }
+
+    @Test
+    fun `addUnique rejects case-insensitive duplicate`() {
+        val list = listOf("Order%")
+        val result = BarcodeUtils.addUnique(list, "order%")
+        assertEquals(listOf("Order%"), result) // unchanged
+    }
+
+    @Test
+    fun `addUnique rejects exact duplicate`() {
+        val list = listOf("*")
+        assertEquals(list, BarcodeUtils.addUnique(list, "*"))
+    }
+
+    @Test
+    fun `addUnique trims whitespace`() {
+        val result = BarcodeUtils.addUnique(emptyList(), "  Order%  ")
+        assertEquals(listOf("Order%"), result)
+    }
+
+    @Test
+    fun `addUnique rejects empty string`() {
+        val result = BarcodeUtils.addUnique(emptyList(), "  ")
+        assertTrue(result.isEmpty())
+    }
+
+    // ---- parseList / serializeList ----
+
+    @Test
+    fun `parseList splits pipe-delimited`() {
+        assertEquals(listOf("A", "B", "C"), BarcodeUtils.parseList("A|B|C"))
+    }
+
+    @Test
+    fun `parseList returns empty for blank`() {
+        assertTrue(BarcodeUtils.parseList("").isEmpty())
+        assertTrue(BarcodeUtils.parseList("  ").isEmpty())
+    }
+
+    @Test
+    fun `serializeList joins with pipe`() {
+        assertEquals("A|B|C", BarcodeUtils.serializeList(listOf("A", "B", "C")))
+    }
+
+    @Test
+    fun `round-trip parse and serialize`() {
+        val original = listOf("Order%", "*", "SKU-")
+        assertEquals(original, BarcodeUtils.parseList(BarcodeUtils.serializeList(original)))
+    }
 }

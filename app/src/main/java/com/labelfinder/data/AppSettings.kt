@@ -10,5 +10,7 @@ data class AppSettings(
     val alertVolume: Int = 100,
     val vibrationStrength: Int = 2,
     val alertToneType: Int = 5,  // ToneGenerator.TONE_PROP_BEEP
-    val stripChars: String = "*+"
+    val stripChars: String = "",  // Deprecated — kept for migration
+    val prefixes: String = "",    // Pipe-delimited prefix strings to ignore
+    val suffixes: String = ""     // Pipe-delimited suffix strings to ignore
 )

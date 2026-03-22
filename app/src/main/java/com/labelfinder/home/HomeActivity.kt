@@ -89,9 +89,12 @@ class HomeActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     val repo = SearchRepository(AppDatabase.getInstance(this@HomeActivity))
                     val settings = repo.getSettings()
+                    val prefixes = com.labelfinder.BarcodeUtils.parseList(settings.prefixes)
+                    val suffixes = com.labelfinder.BarcodeUtils.parseList(settings.suffixes)
                     val intent = Intent(this@HomeActivity, FinderActivity::class.java).apply {
                         putExtra(FinderActivity.EXTRA_BARCODES, viewModel.searchList.value.toTypedArray())
-                        putExtra(FinderActivity.EXTRA_STRIP_CHARS, settings.stripChars)
+                        putExtra(FinderActivity.EXTRA_PREFIXES, prefixes.toTypedArray())
+                        putExtra(FinderActivity.EXTRA_SUFFIXES, suffixes.toTypedArray())
                     }
                     startActivity(intent)
                 }
