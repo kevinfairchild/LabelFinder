@@ -150,7 +150,7 @@ class ScanCaptureActivity : AppCompatActivity() {
     private fun updateLivePreview(barcodes: List<BarcodeAnalyzer.DetectedBarcode>, w: Int, h: Int) {
         binding.overlayView.setSourceDimensions(w, h)
         val rects = barcodes.map {
-            BarcodeOverlayView.BarcodeRect(it.boundingBox, it.rawValue, true)
+            BarcodeOverlayView.BarcodeRect(it.boundingBox, it.rawValue, false)
         }
         binding.overlayView.updateBarcodes(rects)
 
