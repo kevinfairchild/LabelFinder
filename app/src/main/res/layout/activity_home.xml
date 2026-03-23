@@ -12,15 +12,31 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- App title -->
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- App title + settings -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="LabelFinder"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:layout_marginBottom="24dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="LabelFinder"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary" />
+
+            <ImageButton
+                android:id="@+id/settingsButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_manage"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Settings" />
+        </LinearLayout>
 
         <!-- Input row: text field + scan button + add button -->
         <LinearLayout
@@ -123,21 +139,6 @@
             android:layout_weight="1"
             android:visibility="gone" />
 
-        <!-- Settings gear at bottom -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="end"
-            android:layout_marginTop="8dp">
-
-            <ImageButton
-                android:id="@+id/settingsButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_menu_manage"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Settings" />
-        </LinearLayout>
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
