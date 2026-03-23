@@ -241,23 +241,14 @@ class FinderActivity : AppCompatActivity() {
                     @Suppress("DEPRECATION")
                     getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 }
-                if (vibrator.hasVibrator()) {
-                    val pattern = when (vibrationStrength) {
-                        1 -> longArrayOf(0, 200)
-                        2 -> longArrayOf(0, 150, 100, 150)
-                        else -> longArrayOf(0, 200, 100, 200, 100, 200)
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        val amplitudes = when (vibrationStrength) {
-                            1 -> intArrayOf(0, 128)
-                            2 -> intArrayOf(0, 200, 0, 200)
-                            else -> intArrayOf(0, 255, 0, 255, 0, 255)
-                        }
-                        vibrator.vibrate(VibrationEffect.createWaveform(pattern, amplitudes, -1))
-                    } else {
-                        @Suppress("DEPRECATION")
-                        vibrator.vibrate(pattern, -1)
-                    }
+                val duration = when (vibrationStrength) { 1 -> 200L; 2 -> 400L; else -> 600L }
+                val effect = VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    vibrator.vibrate(effect, android.os.VibrationAttributes.createForUsage(
+                        android.os.VibrationAttributes.USAGE_ALARM
+                    ))
+                } else {
+                    vibrator.vibrate(effect)
                 }
             } catch (_: Exception) {}
         }
