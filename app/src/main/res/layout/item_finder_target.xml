@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginStart="10dp"
-        android:fontFamily="monospace"
+        android:fontFamily="@font/jetbrains_mono"
         android:textSize="14sp"
         android:textColor="#FFFFFF"
         android:maxLines="1"

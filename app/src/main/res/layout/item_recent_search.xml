@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:textSize="15sp"
-        android:fontFamily="monospace"
+        android:fontFamily="@font/jetbrains_mono"
         android:textColor="?attr/colorOnSurface"
         android:maxLines="1"
         android:ellipsize="end" />

@@ -57,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textSize="16sp"
-                android:fontFamily="monospace"
+                android:fontFamily="@font/jetbrains_mono"
                 android:textColor="#FFFFFF"
                 android:maxLines="2"
                 android:ellipsize="end" />
