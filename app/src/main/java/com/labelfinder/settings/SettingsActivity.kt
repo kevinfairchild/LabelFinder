@@ -127,7 +127,7 @@ class SettingsActivity : AppCompatActivity() {
         for (prefix in prefixList) {
             val chip = Chip(this).apply {
                 text = prefix
-                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@SettingsActivity, com.labelfinder.R.font.jetbrains_mono) ?: Typeface.MONOSPACE
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@SettingsActivity, com.labelfinder.R.font.jetbrains_mono_regular) ?: Typeface.MONOSPACE
                 isCloseIconVisible = true
                 setOnCloseIconClickListener {
                     prefixList.remove(prefix)
@@ -144,7 +144,7 @@ class SettingsActivity : AppCompatActivity() {
         for (suffix in suffixList) {
             val chip = Chip(this).apply {
                 text = suffix
-                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@SettingsActivity, com.labelfinder.R.font.jetbrains_mono) ?: Typeface.MONOSPACE
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@SettingsActivity, com.labelfinder.R.font.jetbrains_mono_regular) ?: Typeface.MONOSPACE
                 isCloseIconVisible = true
                 setOnCloseIconClickListener {
                     suffixList.remove(suffix)

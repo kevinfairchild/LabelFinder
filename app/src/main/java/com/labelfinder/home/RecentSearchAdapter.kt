@@ -36,7 +36,7 @@ class RecentSearchAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position)
         holder.barcode.text = item.barcode
-        holder.barcode.typeface = androidx.core.content.res.ResourcesCompat.getFont(holder.itemView.context, com.labelfinder.R.font.jetbrains_mono) ?: Typeface.MONOSPACE
+        holder.barcode.typeface = androidx.core.content.res.ResourcesCompat.getFont(holder.itemView.context, com.labelfinder.R.font.jetbrains_mono_regular) ?: Typeface.MONOSPACE
         holder.timestamp.text = formatTimestamp(item.timestamp)
         holder.itemView.setOnClickListener { onTapToAdd(item.barcode) }
     }

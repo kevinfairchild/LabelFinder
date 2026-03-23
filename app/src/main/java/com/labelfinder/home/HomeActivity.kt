@@ -169,7 +169,7 @@ class HomeActivity : AppCompatActivity() {
         for (barcode in barcodes) {
             val chip = Chip(this).apply {
                 text = barcode
-                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@HomeActivity, com.labelfinder.R.font.jetbrains_mono) ?: android.graphics.Typeface.MONOSPACE
+                typeface = androidx.core.content.res.ResourcesCompat.getFont(this@HomeActivity, com.labelfinder.R.font.jetbrains_mono_regular) ?: android.graphics.Typeface.MONOSPACE
                 isCloseIconVisible = true
                 setOnCloseIconClickListener { viewModel.removeFromList(barcode) }
             }

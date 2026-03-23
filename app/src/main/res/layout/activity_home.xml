@@ -48,7 +48,7 @@
                     android:inputType="text"
                     android:imeOptions="actionDone"
                     android:textSize="16sp"
-                    android:fontFamily="@font/jetbrains_mono" />
+                    android:fontFamily="@font/jetbrains_mono_regular" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.button.MaterialButton
