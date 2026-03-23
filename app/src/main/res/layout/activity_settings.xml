@@ -54,32 +54,6 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp" />
 
-        <!-- Matching -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Matching"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/partialMatchSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Allow partial matches"
-            android:textColor="?attr/colorOnSurface"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="When enabled, searching for &quot;1234&quot; will match any barcode containing &quot;1234&quot; (e.g. Order%1234, ABC1234XYZ). When disabled, only exact matches after prefix/suffix stripping."
-            android:textSize="12sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginBottom="24dp" />
-
         <!-- Alerts section -->
         <TextView
             android:layout_width="wrap_content"
@@ -93,13 +67,13 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sound"
+            android:text="Vibration"
             android:textSize="14sp"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginBottom="4dp" />
 
         <com.google.android.material.chip.ChipGroup
-            android:id="@+id/toneChipGroup"
+            android:id="@+id/vibrationChipGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:singleSelection="true"
@@ -125,149 +99,175 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Vibration"
+            android:text="Sound"
             android:textSize="14sp"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginBottom="4dp" />
 
         <com.google.android.material.chip.ChipGroup
-            android:id="@+id/vibrationChipGroup"
+            android:id="@+id/toneChipGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:singleSelection="true"
             app:selectionRequired="true"
             android:layout_marginBottom="24dp" />
 
+        <!-- Matching section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Matching"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/partialMatchSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Allow partial matches"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="When enabled, searching for &quot;1234&quot; will match any barcode containing &quot;1234&quot; (e.g. Order%1234, ABC1234XYZ). When disabled, only exact matches after prefix/suffix stripping."
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Prefix/Suffix section (hidden when partial match enabled) -->
         <LinearLayout
             android:id="@+id/prefixSuffixSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-        <!-- Prefixes to Ignore -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Prefixes to Ignore"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Strings stripped from the start of scanned barcodes when matching. Multiple prefixes are applied in sequence."
-            android:textSize="12sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/prefixChipGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="24dp">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/prefixInputLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Add prefix"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/prefixInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:fontFamily="@font/jetbrains_mono_regular" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/addPrefixButton"
-                style="@style/Widget.Material3.Button.TonalButton"
+            <!-- Prefixes to Ignore -->
+            <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="Add"
-                android:textAllCaps="false"
-                android:layout_marginStart="8dp"
-                app:cornerRadius="12dp" />
-        </LinearLayout>
-
-        <!-- Suffixes to Ignore -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Suffixes to Ignore"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Strings stripped from the end of scanned barcodes when matching. Multiple suffixes are applied in sequence."
-            android:textSize="12sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginBottom="8dp" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/suffixChipGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="24dp">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/suffixInputLayout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Add suffix"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
+                android:text="Prefixes to Ignore"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:layout_marginBottom="4dp" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/suffixInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:fontFamily="@font/jetbrains_mono_regular" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/addSuffixButton"
-                style="@style/Widget.Material3.Button.TonalButton"
+            <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="Add"
-                android:textAllCaps="false"
-                android:layout_marginStart="8dp"
-                app:cornerRadius="12dp" />
-        </LinearLayout>
+                android:layout_height="wrap_content"
+                android:text="Strings stripped from the start of scanned barcodes when matching. Multiple prefixes are applied in sequence."
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="8dp" />
 
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/prefixChipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/prefixInputLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Add prefix"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/prefixInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:fontFamily="@font/jetbrains_mono_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addPrefixButton"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Add"
+                    android:textAllCaps="false"
+                    android:layout_marginStart="8dp"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
+
+            <!-- Suffixes to Ignore -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Suffixes to Ignore"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorPrimary"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Strings stripped from the end of scanned barcodes when matching. Multiple suffixes are applied in sequence."
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="8dp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/suffixChipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/suffixInputLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Add suffix"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusBottomEnd="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/suffixInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:fontFamily="@font/jetbrains_mono_regular" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addSuffixButton"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Add"
+                    android:textAllCaps="false"
+                    android:layout_marginStart="8dp"
+                    app:cornerRadius="12dp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Import/Export -->
