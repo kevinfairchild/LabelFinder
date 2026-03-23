@@ -88,7 +88,6 @@ class FinderActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
-        toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, alertVolume) } catch (_: Exception) { null }
 
         setupButtons()
         setupTargetList()
@@ -101,10 +100,6 @@ class FinderActivity : AppCompatActivity() {
             alertVolume = settings.alertVolume
             vibrationStrength = settings.vibrationStrength
             alertToneType = settings.alertToneType
-            // Recreate tone generator with correct volume
-            toneGenerator?.release()
-            toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, alertVolume) } catch (_: Exception) { null }
-
             // Start camera after settings are loaded
             if (ContextCompat.checkSelfPermission(this@FinderActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 startCamera()
@@ -231,11 +226,16 @@ class FinderActivity : AppCompatActivity() {
 
     private fun triggerAlert() {
         if (alertVolume > 0) {
-            try { toneGenerator?.startTone(alertToneType, 300) } catch (_: Exception) {}
+            try {
+                // Use a fresh ToneGenerator each time for reliability
+                val tg = ToneGenerator(AudioManager.STREAM_ALARM, alertVolume)
+                tg.startTone(alertToneType, 500)
+                binding.root.postDelayed({ tg.release() }, 700)
+            } catch (_: Exception) {}
         }
         if (vibrationStrength > 0) {
-            val duration = when (vibrationStrength) { 1 -> 100L; 2 -> 200L; else -> 350L }
-            val amplitude = when (vibrationStrength) { 1 -> 80; 2 -> 180; else -> 255 }
+            val duration = when (vibrationStrength) { 1 -> 200L; 2 -> 400L; else -> 600L }
+            val amplitude = when (vibrationStrength) { 1 -> 128; 2 -> 200; else -> 255 }
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -257,6 +257,5 @@ class FinderActivity : AppCompatActivity() {
         super.onDestroy()
         barcodeAnalyzer?.close()
         cameraExecutor.shutdown()
-        toneGenerator?.release()
     }
 }
