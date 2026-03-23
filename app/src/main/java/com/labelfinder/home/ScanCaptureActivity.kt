@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.RectF
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -18,10 +17,10 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.labelfinder.BarcodeAnalyzer
 import com.labelfinder.BarcodeOverlayView
+import com.labelfinder.R
 import com.labelfinder.databinding.ActivityScanCaptureBinding
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 class ScanCaptureActivity : AppCompatActivity() {
 
@@ -31,7 +30,7 @@ class ScanCaptureActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var isTorchOn = false
-    private val frozen = AtomicBoolean(false)
+    private var isFrozen = false
 
     private var detectedBarcodes: List<BarcodeAnalyzer.DetectedBarcode> = emptyList()
     private var lastImageWidth = 0
@@ -56,25 +55,33 @@ class ScanCaptureActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        binding.cancelButton.setOnClickListener {
+        // Live panel buttons
+        binding.liveCancelButton.setOnClickListener {
             setResult(Activity.RESULT_CANCELED)
             finish()
         }
 
+        binding.captureButton.setOnClickListener { freezeFrame() }
+
+        // Torch
         binding.torchButton.setOnClickListener {
             camera?.let { cam ->
                 if (cam.cameraInfo.hasFlashUnit()) {
                     isTorchOn = !isTorchOn
                     cam.cameraControl.enableTorch(isTorchOn)
                     binding.torchButton.setImageResource(
-                        if (isTorchOn) com.labelfinder.R.drawable.ic_flashlight_on
-                        else com.labelfinder.R.drawable.ic_flashlight_off
+                        if (isTorchOn) R.drawable.ic_flashlight_on else R.drawable.ic_flashlight_off
                     )
                 }
             }
         }
 
+        // Frozen panel buttons
         binding.rescanButton.setOnClickListener { rescan() }
+        binding.cancelButton.setOnClickListener {
+            setResult(Activity.RESULT_CANCELED)
+            finish()
+        }
 
         binding.useSelectedButton.setOnClickListener {
             val selected = binding.overlayView.getSelectedValues()
@@ -115,11 +122,13 @@ class ScanCaptureActivity : AppCompatActivity() {
             }
 
             val analyzer = BarcodeAnalyzer(intArrayOf()) { barcodes, w, h ->
-                if (barcodes.isNotEmpty() && frozen.compareAndSet(false, true)) {
-                    detectedBarcodes = barcodes
-                    lastImageWidth = w
-                    lastImageHeight = h
-                    runOnUiThread { freezeFrame() }
+                runOnUiThread {
+                    if (!isFrozen) {
+                        detectedBarcodes = barcodes
+                        lastImageWidth = w
+                        lastImageHeight = h
+                        updateLivePreview(barcodes, w, h)
+                    }
                 }
             }
             barcodeAnalyzer = analyzer
@@ -138,18 +147,36 @@ class ScanCaptureActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    private fun updateLivePreview(barcodes: List<BarcodeAnalyzer.DetectedBarcode>, w: Int, h: Int) {
+        binding.overlayView.setSourceDimensions(w, h)
+        val rects = barcodes.map {
+            BarcodeOverlayView.BarcodeRect(it.boundingBox, it.rawValue, true)
+        }
+        binding.overlayView.updateBarcodes(rects)
+
+        val count = barcodes.size
+        binding.captureButton.isEnabled = count > 0
+        binding.scanningText.text = when (count) {
+            0 -> "Point at barcodes\u2026"
+            1 -> "1 barcode detected"
+            else -> "$count barcodes detected"
+        }
+    }
+
     private fun freezeFrame() {
-        // Capture the preview as a bitmap
+        if (detectedBarcodes.isEmpty()) return
+        isFrozen = true
+
         val bitmap = binding.previewView.bitmap
         if (bitmap != null) {
             binding.frozenFrame.setImageBitmap(bitmap)
             binding.frozenFrame.visibility = View.VISIBLE
         }
         binding.previewView.visibility = View.INVISIBLE
-        binding.scanningText.visibility = View.GONE
+        binding.livePanel.visibility = View.GONE
         binding.torchButton.visibility = View.GONE
 
-        // Set up overlay in selectable mode
+        // Switch overlay to selectable mode
         binding.overlayView.setSourceDimensions(lastImageWidth, lastImageHeight)
         val rects = detectedBarcodes.map {
             BarcodeOverlayView.BarcodeRect(it.boundingBox, it.rawValue, false)
@@ -157,14 +184,14 @@ class ScanCaptureActivity : AppCompatActivity() {
         binding.overlayView.isSelectableMode = true
         binding.overlayView.updateBarcodes(rects)
 
-        // Show bottom panel
+        // Show frozen panel
         binding.bottomPanel.visibility = View.VISIBLE
         binding.useSelectedButton.isEnabled = false
         binding.selectionText.text = "Tap barcodes to select"
     }
 
     private fun rescan() {
-        frozen.set(false)
+        isFrozen = false
         detectedBarcodes = emptyList()
         binding.overlayView.isSelectableMode = false
         binding.overlayView.clear()
@@ -172,13 +199,14 @@ class ScanCaptureActivity : AppCompatActivity() {
         binding.frozenFrame.visibility = View.GONE
         binding.frozenFrame.setImageBitmap(null)
         binding.previewView.visibility = View.VISIBLE
-        binding.scanningText.visibility = View.VISIBLE
+        binding.livePanel.visibility = View.VISIBLE
         binding.torchButton.visibility = View.VISIBLE
         binding.bottomPanel.visibility = View.GONE
+        binding.captureButton.isEnabled = false
+        binding.scanningText.text = "Point at barcodes\u2026"
         isTorchOn = false
-        binding.torchButton.setImageResource(com.labelfinder.R.drawable.ic_flashlight_off)
+        binding.torchButton.setImageResource(R.drawable.ic_flashlight_off)
 
-        // Restart camera
         cameraProvider?.unbindAll()
         startCamera()
     }
