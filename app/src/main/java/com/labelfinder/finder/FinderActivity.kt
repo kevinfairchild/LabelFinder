@@ -63,6 +63,7 @@ class FinderActivity : AppCompatActivity() {
     private var camera: Camera? = null
     private var barcodeAnalyzer: BarcodeAnalyzer? = null
     private var isTorchOn = false
+    private var resolutionWarningShown = false
     private var toneGenerator: ToneGenerator? = null
     private lateinit var targetAdapter: TargetListAdapter
     private var alertVolume = 100
@@ -186,7 +187,15 @@ class FinderActivity : AppCompatActivity() {
                 ).build()
 
             val analyzer = BarcodeAnalyzer(intArrayOf()) { barcodes, w, h ->
-                runOnUiThread { handleDetectedBarcodes(barcodes, w, h) }
+                runOnUiThread {
+                    if (!resolutionWarningShown) {
+                        resolutionWarningShown = true
+                        if (w < 1920 || h < 1080) {
+                            Toast.makeText(this, "Low camera resolution (${w}x${h}) — scanning performance may be reduced", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    handleDetectedBarcodes(barcodes, w, h)
+                }
             }
             barcodeAnalyzer = analyzer
 

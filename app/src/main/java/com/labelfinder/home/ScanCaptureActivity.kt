@@ -13,6 +13,8 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.labelfinder.BarcodeAnalyzer
@@ -31,6 +33,7 @@ class ScanCaptureActivity : AppCompatActivity() {
     private var camera: Camera? = null
     private var isTorchOn = false
     private var isFrozen = false
+    private var resolutionWarningShown = false
 
     private var detectedBarcodes: List<BarcodeAnalyzer.DetectedBarcode> = emptyList()
     private var lastImageWidth = 0
@@ -127,6 +130,12 @@ class ScanCaptureActivity : AppCompatActivity() {
 
             val analyzer = BarcodeAnalyzer(intArrayOf()) { barcodes, w, h ->
                 runOnUiThread {
+                    if (!resolutionWarningShown) {
+                        resolutionWarningShown = true
+                        if (w < 1920 || h < 1080) {
+                            Toast.makeText(this, "Low camera resolution (${w}x${h}) — scanning performance may be reduced", Toast.LENGTH_LONG).show()
+                        }
+                    }
                     if (!isFrozen) {
                         detectedBarcodes = barcodes
                         lastImageWidth = w
@@ -137,7 +146,16 @@ class ScanCaptureActivity : AppCompatActivity() {
             }
             barcodeAnalyzer = analyzer
 
+            val resolutionSelector = ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        android.util.Size(1920, 1080),
+                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                    )
+                ).build()
+
             val analysis = ImageAnalysis.Builder()
+                .setResolutionSelector(resolutionSelector)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build().also { it.setAnalyzer(cameraExecutor, analyzer) }
 
