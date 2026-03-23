@@ -38,13 +38,13 @@ class SettingsActivity : AppCompatActivity() {
         "QR_CODE" to "QR Code", "DATA_MATRIX" to "Data Matrix",
         "PDF_417" to "PDF417", "AZTEC" to "Aztec"
     )
-    private val volumeOptions = listOf(33 to "Low", 66 to "Medium", 100 to "High")
+    private val volumeOptions = listOf(0 to "Off", 33 to "Low", 66 to "Medium", 100 to "High")
     private val vibrationOptions = listOf(0 to "Off", 1 to "Light", 2 to "Medium", 3 to "Strong")
     private val toneOptions = listOf(
-        ToneGenerator.TONE_PROP_BEEP to "Tone 1",
-        ToneGenerator.TONE_PROP_ACK to "Tone 2",
-        ToneGenerator.TONE_PROP_PROMPT to "Tone 3",
-        ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to "Tone 4"
+        ToneGenerator.TONE_PROP_BEEP to "1",
+        ToneGenerator.TONE_PROP_ACK to "2",
+        ToneGenerator.TONE_PROP_PROMPT to "3",
+        ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD to "4"
     )
 
     private val importFileLauncher = registerForActivityResult(
