@@ -11,7 +11,7 @@ data class AppSettings(
     val enabledFormats: String = "CODE_39,CODE_128,EAN_13,EAN_8,UPC_A,UPC_E,QR_CODE,DATA_MATRIX,PDF_417,AZTEC",
     val alertVolume: Int = 100,
     val vibrationStrength: Int = 2,
-    val alertToneType: Int = 5,  // ToneGenerator.TONE_PROP_BEEP
+    val alertToneType: Int = 36,  // ToneGenerator.TONE_PROP_BEEP
     val stripChars: String = "",  // Deprecated — kept for migration
     val prefixes: String = "",    // Pipe-delimited prefix strings to ignore
     val suffixes: String = "",    // Pipe-delimited suffix strings to ignore
@@ -45,7 +45,7 @@ data class AppSettings(
                 enabledFormats = formats,
                 alertVolume = json.optInt("alertVolume", 100),
                 vibrationStrength = json.optInt("vibrationStrength", 2),
-                alertToneType = json.optInt("alertToneType", 5),
+                alertToneType = json.optInt("alertToneType", 36),
                 prefixes = prefixes,
                 suffixes = suffixes,
                 partialMatch = json.optBoolean("partialMatch", false)
