@@ -88,25 +88,29 @@ class FinderActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+        toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, alertVolume) } catch (_: Exception) { null }
 
-        // Load alert settings from DB
+        setupButtons()
+        setupTargetList()
+        observeState()
+
+        // Load alert settings from DB, then start camera
         lifecycleScope.launch {
             val repo = SearchRepository(AppDatabase.getInstance(this@FinderActivity))
             val settings = repo.getSettings()
             alertVolume = settings.alertVolume
             vibrationStrength = settings.vibrationStrength
             alertToneType = settings.alertToneType
+            // Recreate tone generator with correct volume
+            toneGenerator?.release()
             toneGenerator = try { ToneGenerator(AudioManager.STREAM_NOTIFICATION, alertVolume) } catch (_: Exception) { null }
-        }
 
-        setupButtons()
-        setupTargetList()
-        observeState()
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startCamera()
-        } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
+            // Start camera after settings are loaded
+            if (ContextCompat.checkSelfPermission(this@FinderActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                startCamera()
+            } else {
+                permissionLauncher.launch(Manifest.permission.CAMERA)
+            }
         }
     }
 
