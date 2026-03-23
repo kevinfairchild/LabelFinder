@@ -43,16 +43,8 @@ class HomeActivity : AppCompatActivity() {
     ) { result ->
         if (result.resultCode == RESULT_OK) {
             val barcodes = result.data?.getStringArrayExtra(ScanCaptureActivity.RESULT_BARCODES)
-            if (barcodes != null && barcodes.size > 1) {
-                // Multiple selected — add all to list
+            if (barcodes != null) {
                 for (b in barcodes) viewModel.addToList(b)
-            } else {
-                // Single selected — populate text field
-                val barcode = result.data?.getStringExtra(ScanCaptureActivity.RESULT_BARCODE)
-                if (!barcode.isNullOrBlank()) {
-                    binding.barcodeInput.setText(barcode)
-                    binding.barcodeInput.setSelection(barcode.length)
-                }
             }
         }
     }
