@@ -234,20 +234,30 @@ class FinderActivity : AppCompatActivity() {
             } catch (_: Exception) {}
         }
         if (vibrationStrength > 0) {
-            val duration = when (vibrationStrength) { 1 -> 200L; 2 -> 400L; else -> 600L }
-            val amplitude = when (vibrationStrength) { 1 -> 128; 2 -> 200; else -> 255 }
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                    vm.defaultVibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude))
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    @Suppress("DEPRECATION")
-                    (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(
-                        VibrationEffect.createOneShot(duration, amplitude)
-                    )
+                val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
                 } else {
                     @Suppress("DEPRECATION")
-                    (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).vibrate(duration)
+                    getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                }
+                if (vibrator.hasVibrator()) {
+                    val pattern = when (vibrationStrength) {
+                        1 -> longArrayOf(0, 200)
+                        2 -> longArrayOf(0, 150, 100, 150)
+                        else -> longArrayOf(0, 200, 100, 200, 100, 200)
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val amplitudes = when (vibrationStrength) {
+                            1 -> intArrayOf(0, 128)
+                            2 -> intArrayOf(0, 200, 0, 200)
+                            else -> intArrayOf(0, 255, 0, 255, 0, 255)
+                        }
+                        vibrator.vibrate(VibrationEffect.createWaveform(pattern, amplitudes, -1))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator.vibrate(pattern, -1)
+                    }
                 }
             } catch (_: Exception) {}
         }
