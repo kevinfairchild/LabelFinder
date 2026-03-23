@@ -105,11 +105,6 @@ class BarcodeOverlayView @JvmOverloads constructor(
     }
 
     fun updateBarcodes(newBarcodes: List<BarcodeRect>) {
-        val newTargets = newBarcodes.filter { it.isTarget }
-        if (newTargets.isNotEmpty()) {
-            stickyFoundRects = newTargets
-            stickyExpireTime = System.currentTimeMillis() + stickyDurationMs
-        }
         barcodes = newBarcodes
         invalidate()
     }
@@ -182,9 +177,7 @@ class BarcodeOverlayView @JvmOverloads constructor(
             return
         }
 
-        val now = System.currentTimeMillis()
         val hasLiveTarget = barcodes.any { it.isTarget }
-        val hasStickyTarget = !hasLiveTarget && stickyFoundRects.isNotEmpty() && now < stickyExpireTime
 
         // Screen border flash
         if (isFlashing && flashAlpha > 0) {
@@ -197,20 +190,17 @@ class BarcodeOverlayView @JvmOverloads constructor(
         for (barcode in barcodes) {
             if (!barcode.isTarget) {
                 val mapped = mapRect(barcode.rect)
-                defaultPaint.alpha = if (hasLiveTarget || hasStickyTarget) 60 else 200
+                defaultPaint.alpha = if (hasLiveTarget) 60 else 200
                 canvas.drawRoundRect(mapped, 8f, 8f, defaultPaint)
-                if (!hasLiveTarget && !hasStickyTarget) drawLabel(canvas, mapped, barcode.value)
+                if (!hasLiveTarget) drawLabel(canvas, mapped, barcode.value)
             }
         }
 
         if (hasLiveTarget) {
             for (b in barcodes.filter { it.isTarget }) drawTargetHighlight(canvas, mapRect(b.rect), b.value, 1f, b.highlightColor)
-        } else if (hasStickyTarget) {
-            val fade = ((stickyExpireTime - now).toFloat() / stickyDurationMs).coerceIn(0f, 1f)
-            for (b in stickyFoundRects) drawTargetHighlight(canvas, mapRect(b.rect), b.value, fade)
         }
 
-        if (hasLiveTarget || hasStickyTarget || isFlashing) postInvalidateDelayed(30)
+        if (hasLiveTarget || isFlashing) postInvalidateDelayed(30)
     }
 
     private fun drawSelectableMode(canvas: Canvas) {

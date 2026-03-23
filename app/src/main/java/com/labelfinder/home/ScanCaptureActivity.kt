@@ -36,6 +36,10 @@ class ScanCaptureActivity : AppCompatActivity() {
     private var lastImageWidth = 0
     private var lastImageHeight = 0
 
+    // Confidence filter: require N detections before showing a barcode
+    private val detectionCounts = mutableMapOf<String, Int>()
+    private val confirmThreshold = 3
+
     companion object {
         const val RESULT_BARCODE = "barcode"
         const val RESULT_BARCODES = "barcodes"
@@ -149,12 +153,35 @@ class ScanCaptureActivity : AppCompatActivity() {
 
     private fun updateLivePreview(barcodes: List<BarcodeAnalyzer.DetectedBarcode>, w: Int, h: Int) {
         binding.overlayView.setSourceDimensions(w, h)
-        val rects = barcodes.map {
+
+        // Update detection counts
+        val currentValues = barcodes.map { it.rawValue }.toSet()
+        for (value in currentValues) {
+            detectionCounts[value] = (detectionCounts[value] ?: 0) + 1
+        }
+        val toRemove = mutableListOf<String>()
+        for ((value, count) in detectionCounts) {
+            if (value !in currentValues) {
+                val newCount = count - 1
+                if (newCount <= 0) toRemove.add(value)
+                else detectionCounts[value] = newCount
+            }
+        }
+        toRemove.forEach { detectionCounts.remove(it) }
+
+        // Only show confirmed barcodes
+        val confirmedValues = detectionCounts.filter { it.value >= confirmThreshold }.keys
+        val confirmed = barcodes.filter { it.rawValue in confirmedValues }
+
+        // Update detectedBarcodes for freeze frame
+        detectedBarcodes = confirmed
+
+        val rects = confirmed.map {
             BarcodeOverlayView.BarcodeRect(it.boundingBox, it.rawValue, false)
         }
         binding.overlayView.updateBarcodes(rects)
 
-        val count = barcodes.size
+        val count = confirmed.size
         binding.captureButton.isEnabled = count > 0
         binding.scanningText.text = when (count) {
             0 -> "Point at barcodes\u2026"
@@ -193,6 +220,7 @@ class ScanCaptureActivity : AppCompatActivity() {
     private fun rescan() {
         isFrozen = false
         detectedBarcodes = emptyList()
+        detectionCounts.clear()
         binding.overlayView.isSelectableMode = false
         binding.overlayView.clear()
         binding.overlayView.clearSelection()

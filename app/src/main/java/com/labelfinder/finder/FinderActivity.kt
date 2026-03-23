@@ -69,6 +69,10 @@ class FinderActivity : AppCompatActivity() {
     private var vibrationStrength = 2
     private var alertToneType = ToneGenerator.TONE_PROP_BEEP
 
+    // Confidence filter: require N detections before showing a barcode
+    private val detectionCounts = mutableMapOf<String, Int>()
+    private val confirmThreshold = 3 // must be seen in 3 frames to display
+
     private val viewModel: FinderViewModel by viewModels {
         val barcodes = intent.getStringArrayExtra(EXTRA_BARCODES)?.toList() ?: emptyList()
         val prefixes = intent.getStringArrayExtra(EXTRA_PREFIXES)?.toList() ?: emptyList()
@@ -207,12 +211,31 @@ class FinderActivity : AppCompatActivity() {
     ) {
         binding.overlayView.setSourceDimensions(imageWidth, imageHeight)
 
-        val state = viewModel.state.value
-        val scannedValues = detected.map { it.rawValue }
+        // Update detection counts: increment for seen values, decay for unseen
+        val currentValues = detected.map { it.rawValue }.toSet()
+        for (value in currentValues) {
+            detectionCounts[value] = (detectionCounts[value] ?: 0) + 1
+        }
+        // Decay values not seen this frame; remove if they drop to 0
+        val toRemove = mutableListOf<String>()
+        for ((value, count) in detectionCounts) {
+            if (value !in currentValues) {
+                val newCount = count - 1
+                if (newCount <= 0) toRemove.add(value)
+                else detectionCounts[value] = newCount
+            }
+        }
+        toRemove.forEach { detectionCounts.remove(it) }
+
+        // Only use confirmed barcodes (seen >= threshold frames)
+        val confirmedValues = detectionCounts.filter { it.value >= confirmThreshold }.keys
+        val confirmedDetections = detected.filter { it.rawValue in confirmedValues }
+
+        val scannedValues = confirmedDetections.map { it.rawValue }
         val newlySpotted = viewModel.onBarcodesDetected(scannedValues)
 
-        // Build overlay rects with per-target colors
-        val rects = detected.map { barcode ->
+        // Build overlay rects only for confirmed barcodes
+        val rects = confirmedDetections.map { barcode ->
             val targetIdx = viewModel.matchingTargetIndex(barcode.rawValue)
             val isTarget = targetIdx >= 0
             val color = if (targetIdx >= 0) TARGET_COLORS[targetIdx % TARGET_COLORS.size] else 0
