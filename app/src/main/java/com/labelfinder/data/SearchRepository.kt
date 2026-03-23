@@ -8,7 +8,7 @@ class SearchRepository(private val db: AppDatabase) {
     private val settingsDao = db.appSettingsDao()
 
     companion object {
-        const val HISTORY_MAX_ITEMS = 200
+        const val HISTORY_MAX_ITEMS = 20
         const val HISTORY_MAX_AGE_MS = 90L * 24 * 60 * 60 * 1000 // 90 days
     }
 
