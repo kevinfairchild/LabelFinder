@@ -14,7 +14,8 @@ data class AppSettings(
     val alertToneType: Int = 5,  // ToneGenerator.TONE_PROP_BEEP
     val stripChars: String = "",  // Deprecated — kept for migration
     val prefixes: String = "",    // Pipe-delimited prefix strings to ignore
-    val suffixes: String = ""     // Pipe-delimited suffix strings to ignore
+    val suffixes: String = "",    // Pipe-delimited suffix strings to ignore
+    val partialMatch: Boolean = false
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("enabledFormats", JSONArray(enabledFormats.split(",")))
@@ -23,6 +24,7 @@ data class AppSettings(
         put("alertToneType", alertToneType)
         put("prefixes", JSONArray(if (prefixes.isBlank()) emptyList() else prefixes.split("|")))
         put("suffixes", JSONArray(if (suffixes.isBlank()) emptyList() else suffixes.split("|")))
+        put("partialMatch", partialMatch)
     }
 
     companion object {
@@ -45,7 +47,8 @@ data class AppSettings(
                 vibrationStrength = json.optInt("vibrationStrength", 2),
                 alertToneType = json.optInt("alertToneType", 5),
                 prefixes = prefixes,
-                suffixes = suffixes
+                suffixes = suffixes,
+                partialMatch = json.optBoolean("partialMatch", false)
             )
         }
     }

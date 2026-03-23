@@ -54,6 +54,32 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp" />
 
+        <!-- Matching -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Matching"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/partialMatchSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Allow partial matches"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="When enabled, searching for &quot;1234&quot; will match any barcode containing &quot;1234&quot; (e.g. Order%1234, ABC1234XYZ). When disabled, only exact matches after prefix/suffix stripping."
+            android:textSize="12sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_marginBottom="24dp" />
+
         <!-- Alerts section -->
         <TextView
             android:layout_width="wrap_content"
@@ -111,6 +137,12 @@
             app:singleSelection="true"
             app:selectionRequired="true"
             android:layout_marginBottom="24dp" />
+
+        <LinearLayout
+            android:id="@+id/prefixSuffixSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
         <!-- Prefixes to Ignore -->
         <TextView
@@ -234,6 +266,8 @@
                 android:textAllCaps="false"
                 android:layout_marginStart="8dp"
                 app:cornerRadius="12dp" />
+        </LinearLayout>
+
         </LinearLayout>
 
         <!-- Import/Export -->

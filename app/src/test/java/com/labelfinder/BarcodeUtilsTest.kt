@@ -219,6 +219,35 @@ class BarcodeUtilsTest {
         assertFalse(BarcodeUtils.barcodeMatches("Order%", "1234", listOf("Order%"), emptyList()))
     }
 
+    // ---- Partial matching ----
+
+    @Test
+    fun `partial match finds substring`() {
+        assertTrue(BarcodeUtils.barcodeMatches("Order%1234", "1234", emptyList(), emptyList(), partialMatch = true))
+    }
+
+    @Test
+    fun `partial match is case insensitive`() {
+        assertTrue(BarcodeUtils.barcodeMatches("ABC1234XYZ", "abc1234xyz", emptyList(), emptyList(), partialMatch = true))
+        assertTrue(BarcodeUtils.barcodeMatches("ABC1234XYZ", "1234", emptyList(), emptyList(), partialMatch = true))
+    }
+
+    @Test
+    fun `partial match works with prefix stripping`() {
+        // Strip "Order%" first → "1234ABC", then partial match "1234"
+        assertTrue(BarcodeUtils.barcodeMatches("Order%1234ABC", "1234", listOf("Order%"), emptyList(), partialMatch = true))
+    }
+
+    @Test
+    fun `partial match rejects when substring not present`() {
+        assertFalse(BarcodeUtils.barcodeMatches("ABCXYZ", "1234", emptyList(), emptyList(), partialMatch = true))
+    }
+
+    @Test
+    fun `exact match rejects substring when partial disabled`() {
+        assertFalse(BarcodeUtils.barcodeMatches("Order%1234", "1234", emptyList(), emptyList(), partialMatch = false))
+    }
+
     // ---- addUnique ----
 
     @Test

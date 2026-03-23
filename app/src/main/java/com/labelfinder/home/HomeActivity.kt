@@ -107,6 +107,7 @@ class HomeActivity : AppCompatActivity() {
                         putExtra(FinderActivity.EXTRA_BARCODES, viewModel.searchList.value.toTypedArray())
                         putExtra(FinderActivity.EXTRA_PREFIXES, prefixes.toTypedArray())
                         putExtra(FinderActivity.EXTRA_SUFFIXES, suffixes.toTypedArray())
+                        putExtra(FinderActivity.EXTRA_PARTIAL_MATCH, settings.partialMatch)
                     }
                     startActivity(intent)
                 }

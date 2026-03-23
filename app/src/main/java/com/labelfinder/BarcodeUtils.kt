@@ -25,10 +25,15 @@ object BarcodeUtils {
         scannedValue: String,
         searchTerm: String,
         prefixes: List<String>,
-        suffixes: List<String>
+        suffixes: List<String>,
+        partialMatch: Boolean = false
     ): Boolean {
         val normalized = stripPrefixesAndSuffixes(scannedValue, prefixes, suffixes)
-        return normalized.equals(searchTerm, ignoreCase = true)
+        return if (partialMatch) {
+            normalized.contains(searchTerm, ignoreCase = true)
+        } else {
+            normalized.equals(searchTerm, ignoreCase = true)
+        }
     }
 
     /**

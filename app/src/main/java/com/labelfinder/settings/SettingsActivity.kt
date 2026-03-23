@@ -86,6 +86,7 @@ class SettingsActivity : AppCompatActivity() {
             prefixList = BarcodeUtils.parseList(currentSettings.prefixes).toMutableList()
             suffixList = BarcodeUtils.parseList(currentSettings.suffixes).toMutableList()
             setupFormatChips()
+            setupPartialMatch()
             setupVolumeChips()
             setupVibrationChips()
             setupToneChips()
@@ -164,7 +165,23 @@ class SettingsActivity : AppCompatActivity() {
         save()
     }
 
-    // ---- Format/Volume/Vibration/Tone setup (unchanged) ----
+    // ---- Matching ----
+
+    private fun setupPartialMatch() {
+        binding.partialMatchSwitch.isChecked = currentSettings.partialMatch
+        updatePrefixSuffixVisibility(currentSettings.partialMatch)
+        binding.partialMatchSwitch.setOnCheckedChangeListener { _, isChecked ->
+            currentSettings = currentSettings.copy(partialMatch = isChecked)
+            updatePrefixSuffixVisibility(isChecked)
+            save()
+        }
+    }
+
+    private fun updatePrefixSuffixVisibility(partialEnabled: Boolean) {
+        binding.prefixSuffixSection.visibility = if (partialEnabled) android.view.View.GONE else android.view.View.VISIBLE
+    }
+
+    // ---- Format/Volume/Vibration/Tone setup ----
 
     private fun setupFormatChips() {
         val enabled = currentSettings.enabledFormats.split(",").toSet()
