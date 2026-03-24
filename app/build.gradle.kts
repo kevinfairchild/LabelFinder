@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("com.google.devtools.ksp")
@@ -7,12 +9,23 @@ android {
     namespace = "com.labelfinder"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            val props = Properties()
+            props.load(rootProject.file("local.properties").inputStream())
+            storeFile = file("keystore.jks")
+            storePassword = props.getProperty("KEYSTORE_PASSWORD")
+            keyAlias = "upload"
+            keyPassword = props.getProperty("KEY_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId = "com.labelfinder"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 260324001
+        versionName = "2026.03.24.001"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -20,6 +33,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -55,8 +69,11 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
-    // ML Kit Barcode Scanning (unbundled — uses Google Play Services, no native .so in APK)
-    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    // ML Kit Barcode Scanning
+    // Unbundled for release (smaller APK, downloads model via Google Play Services)
+    // Bundled for debug (works immediately on emulators without Play Services model download)
+    releaseImplementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    debugImplementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // Lifecycle / ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")

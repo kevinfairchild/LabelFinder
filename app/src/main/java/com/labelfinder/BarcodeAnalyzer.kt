@@ -16,7 +16,8 @@ class BarcodeAnalyzer(
         barcodes: List<DetectedBarcode>,
         imageWidth: Int,
         imageHeight: Int
-    ) -> Unit
+    ) -> Unit,
+    private val onError: ((Exception) -> Unit)? = null
 ) : ImageAnalysis.Analyzer {
 
     data class DetectedBarcode(
@@ -79,7 +80,10 @@ class BarcodeAnalyzer(
                 }
                 onBarcodesDetected(detected, rotatedWidth, rotatedHeight)
             }
-            .addOnFailureListener { e -> Log.w("BarcodeAnalyzer", "Barcode scanning failed", e) }
+            .addOnFailureListener { e ->
+                Log.w("BarcodeAnalyzer", "Barcode scanning failed", e)
+                onError?.invoke(e)
+            }
             .addOnCompleteListener {
                 imageProxy.close()
             }

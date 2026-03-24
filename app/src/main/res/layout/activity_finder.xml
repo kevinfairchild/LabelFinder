@@ -14,6 +14,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Static image shown on emulator instead of camera -->
+    <ImageView
+        android:id="@+id/staticImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
     <!-- Barcode overlay -->
     <com.labelfinder.BarcodeOverlayView
         android:id="@+id/overlayView"

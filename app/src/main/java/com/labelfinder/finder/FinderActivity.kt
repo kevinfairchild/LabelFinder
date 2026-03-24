@@ -3,6 +3,8 @@ package com.labelfinder.finder
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.graphics.RectF
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -27,8 +29,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.common.InputImage
 import com.labelfinder.BarcodeAnalyzer
 import com.labelfinder.BarcodeOverlayView
+import com.labelfinder.DemoImageTouchHelper
 import com.labelfinder.R
 import com.labelfinder.data.AppDatabase
 import com.labelfinder.data.SearchRepository
@@ -108,7 +113,9 @@ class FinderActivity : AppCompatActivity() {
             vibrationStrength = settings.vibrationStrength
             alertToneType = settings.alertToneType
             // Start camera after settings are loaded
-            if (ContextCompat.checkSelfPermission(this@FinderActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            if (isEmulator()) {
+                loadDemoImage()
+            } else if (ContextCompat.checkSelfPermission(this@FinderActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 startCamera()
             } else {
                 permissionLauncher.launch(Manifest.permission.CAMERA)
@@ -170,6 +177,53 @@ class FinderActivity : AppCompatActivity() {
         }
     }
 
+    private fun isEmulator(): Boolean =
+        Build.FINGERPRINT.contains("generic") || Build.FINGERPRINT.contains("emulator") ||
+        Build.MODEL.contains("Emulator") || Build.MODEL.contains("Android SDK") ||
+        Build.PRODUCT.contains("sdk") || Build.HARDWARE.contains("ranchu")
+
+    private fun loadDemoImage() {
+        val bitmap = try {
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = 2
+            }
+            assets.open("demo_barcodes.png").use { BitmapFactory.decodeStream(it, null, options) }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to load demo image", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (bitmap == null) {
+            Toast.makeText(this, "Failed to decode demo image", Toast.LENGTH_SHORT).show()
+            return
+        }
+        binding.previewView.visibility = View.GONE
+        binding.staticImage.setImageBitmap(bitmap)
+        binding.staticImage.visibility = View.VISIBLE
+        binding.torchButton.visibility = View.GONE
+
+        DemoImageTouchHelper(binding.overlayView, binding.staticImage, binding.overlayView).attach()
+
+        val inputImage = InputImage.fromBitmap(bitmap, 0)
+        BarcodeScanning.getClient().process(inputImage)
+            .addOnSuccessListener { barcodes ->
+                val detected = barcodes.mapNotNull { barcode ->
+                    val box = barcode.boundingBox ?: return@mapNotNull null
+                    val value = barcode.rawValue ?: return@mapNotNull null
+                    BarcodeAnalyzer.DetectedBarcode(
+                        rawValue = value,
+                        boundingBox = RectF(box.left.toFloat(), box.top.toFloat(), box.right.toFloat(), box.bottom.toFloat())
+                    )
+                }
+                // Pre-seed confidence counts so barcodes show immediately
+                detected.forEach { detectionCounts[it.rawValue] = confirmThreshold }
+                binding.overlayView.setSourceDimensions(bitmap.width, bitmap.height)
+                handleDetectedBarcodes(detected, bitmap.width, bitmap.height)
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Barcode scan failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
     private fun startCamera() {
         val future = ProcessCameraProvider.getInstance(this)
         future.addListener({
@@ -186,17 +240,29 @@ class FinderActivity : AppCompatActivity() {
                     )
                 ).build()
 
-            val analyzer = BarcodeAnalyzer(intArrayOf()) { barcodes, w, h ->
-                runOnUiThread {
-                    if (!resolutionWarningShown) {
-                        resolutionWarningShown = true
-                        if (w < 1920 || h < 1080) {
-                            Toast.makeText(this, "Low camera resolution (${w}x${h}) — scanning performance may be reduced", Toast.LENGTH_LONG).show()
+            var errorShown = false
+            val analyzer = BarcodeAnalyzer(
+                formats = intArrayOf(),
+                onBarcodesDetected = { barcodes, w, h ->
+                    runOnUiThread {
+                        if (!resolutionWarningShown) {
+                            resolutionWarningShown = true
+                            if (w < 1920 || h < 1080) {
+                                Toast.makeText(this, "Low camera resolution (${w}x${h}) — scanning performance may be reduced", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        handleDetectedBarcodes(barcodes, w, h)
+                    }
+                },
+                onError = { e ->
+                    if (!errorShown) {
+                        errorShown = true
+                        runOnUiThread {
+                            Toast.makeText(this, "Barcode scanner: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
-                    handleDetectedBarcodes(barcodes, w, h)
                 }
-            }
+            )
             barcodeAnalyzer = analyzer
 
             val analysis = ImageAnalysis.Builder()
